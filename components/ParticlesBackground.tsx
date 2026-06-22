@@ -42,7 +42,9 @@ export default function ParticlesBackground() {
                 enable: true,
                 mode: "repulse",
               },
-              resize: true,
+              resize: {
+                enable: true,
+              },
             },
             modes: {
               repulse: {
@@ -73,18 +75,13 @@ export default function ParticlesBackground() {
               straight: false,
             },
             number: {
-              density: {
-                enable: true,
-                area: 800,
-              },
               value: 50,
             },
             opacity: {
-              value: 0.3,
+              value: { min: 0.1, max: 0.3 },
               animation: {
                 enable: true,
                 speed: 1,
-                minimumValue: 0.1,
               }
             },
             shape: {
