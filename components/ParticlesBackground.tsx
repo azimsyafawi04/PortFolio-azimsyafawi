@@ -1,26 +1,34 @@
 "use client";
 
-import { useCallback } from "react";
-import Particles from "react-tsparticles";
+import { useEffect, useState } from "react";
+import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
-import type { Container, Engine } from "tsparticles-engine";
+import type { Container } from "@tsparticles/engine";
 
 export default function ParticlesBackground() {
-  const particlesInit = useCallback(async (engine: Engine) => {
-    // load the slim version to reduce bundle size
-    await loadSlim(engine);
+  const [init, setInit] = useState(false);
+
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      await loadSlim(engine);
+    }).then(() => {
+      setInit(true);
+    });
   }, []);
 
-  const particlesLoaded = useCallback(async (container: Container | undefined) => {
+  const particlesLoaded = async (container?: Container): Promise<void> => {
     // container loaded
-  }, []);
+  };
+
+  if (!init) {
+    return <></>;
+  }
 
   return (
     <div className="fixed inset-0 z-[-10] pointer-events-none">
       <Particles
         id="tsparticles"
-        init={particlesInit}
-        loaded={particlesLoaded}
+        particlesLoaded={particlesLoaded}
         options={{
           background: {
             color: {
