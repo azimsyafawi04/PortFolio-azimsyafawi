@@ -1,0 +1,105 @@
+import { FaGithub, FaLinkedin, FaPhone } from "react-icons/fa";
+import { SiFiverr } from "react-icons/si";
+import { Mail } from "lucide-react";
+
+export const PORTFOLIO_DATA = {
+  name: "Azim Syafawi",
+  role: "Computer System Security Student | Web & Mobile App Developer",
+  tagline: "Passionate about cybersecurity operations, full-stack web development, and secure mobile applications.",
+  about: `I am a second-year Computer System Security student at UniKL MIIT, working actively as a web and mobile app developer. I have a strong interest in security operations, penetration testing, and software engineering. I combine my coding skills with cybersecurity knowledge to build secure, functional, and high-performing digital solutions.`,
+  skills: [
+    "Vulnerability Scanning", "Python", "Malware Analysis", "Nmap", "Flutter",
+    "Information Security", "Burp Suite", "Databases", "Java", "Leadership",
+    "MySQL", "Linux", "Teamwork", "Tenable Nessus", "HTML", "CSS", "JavaScript"
+  ],
+  certifications: [
+    "IBM SkillsBuild: Project Management Fundamentals"
+  ],
+  projects: [
+    {
+      id: 3,
+      title: "SOC Simulator",
+      description: "A Security Operations Center simulation environment designed for threat detection, log analysis, and incident response training.",
+      image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop",
+      tags: ["Cybersecurity", "Splunk", "Wazuh"],
+      githubUrl: "https://github.com/azimsyafawi04/soc_simulator",
+      liveUrl: "#"
+    },
+    {
+      id: 4,
+      title: "AS SHOP STUDIO",
+      description: "A sleek, responsive promotional web design concept for Nike showcasing modern CSS styling and layout techniques.",
+      image: "/as-shop-1.png",
+      images: ["/as-shop-1.png", "/as-shop-2.png", "/as-shop-3.png"],
+      tags: ["HTML5", "CSS3", "UI/UX"],
+      githubUrl: "#",
+      liveUrl: "#"
+    },
+    {
+      id: 5,
+      title: "Basic Web Package Demo",
+      description: "Starter Business Page: 1-page responsive landing page for your business with contact form, basic info, and social media.",
+      price: "MYR 348.71",
+      features: ["1 Page", "Functional website", "Content upload", "Social media icons", "1 Plugin", "2 Revisions", "4 Days Delivery"],
+      image: "/basic-demo.png",
+      images: ["/basic-demo.png", "/basic-demo-1.png", "/basic-demo-2.png", "/basic-demo-3.png"],
+      tags: ["HTML", "CSS", "JavaScript"],
+      githubUrl: "#",
+      liveUrl: "#"
+    },
+    {
+      id: 6,
+      title: "Standard Web Package Demo",
+      description: "Professional Business Site: Up to 5 pages responsive website with live chat integration, dynamic forms, and custom booking.",
+      price: "MYR 2,638",
+      features: ["5 Pages", "Opt-in form & Autoresponder", "Speed optimization", "3 Plugins", "4 Revisions", "10 Days Delivery"],
+      image: "/standard-demo.png",
+      images: ["/standard-demo.png", "/std-demo-1.png", "/std-demo-2.png", "/std-demo-3.png", "/std-demo-4.png", "/std-demo-5.png"],
+      tags: ["HTML", "CSS", "JavaScript"],
+      githubUrl: "#",
+      liveUrl: "#"
+    },
+    {
+      id: 7,
+      title: "Premium Web Package",
+      description: "Custom System & Dashboard: Advanced web application (up to 10 pages) with secure admin dashboard and inventory management.",
+      price: "MYR 4,752",
+      features: ["10 Pages", "E-commerce & Payment", "Hosting setup", "10 Products", "Unlimited Revisions", "21 Days Delivery"],
+      image: "/premium-demo.png",
+      video: "/premium-demo.mp4",
+      tags: ["HTML", "CSS", "JavaScript", "Advanced UI"],
+      githubUrl: "#",
+      liveUrl: "#"
+    }
+  ],
+  contact: {
+    email: "syafawimuhamadazim@gmail.com",
+    socials: [
+      {
+        name: "GitHub",
+        url: "https://github.com/azimsyafawi04",
+        icon: FaGithub
+      },
+      {
+        name: "LinkedIn",
+        url: "https://www.linkedin.com/in/azim-syafawi-0b249931a",
+        icon: FaLinkedin
+      },
+      {
+        name: "Email",
+        url: "mailto:syafawimuhamadazim@gmail.com",
+        icon: Mail
+      },
+      {
+        name: "Phone",
+        url: "tel:+60196606542",
+        icon: FaPhone
+      },
+      {
+        name: "Fiverr",
+        url: "https://www.fiverr.com/s/R7g5gGL",
+        icon: SiFiverr
+      }
+    ]
+  }
+};
