@@ -117,11 +117,13 @@ function ProjectCard({ project, onOpenModal }: { project: any, onOpenModal: (pro
               </a>
             ) : (
               <button 
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   onOpenModal(project);
                 }}
-                className="flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300 hover:glow-text-cyan transition-all ml-auto cursor-pointer"
+                className="flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300 hover:glow-text-cyan transition-all ml-auto cursor-pointer relative z-50"
               >
                 <ExternalLink className="w-4 h-4" />
                 View Interface
@@ -151,40 +153,43 @@ export default function Projects() {
   };
 
   return (
-    <section id="projects" className="min-h-[120vh] py-24 px-6 flex items-center relative z-10 pointer-events-none">
-      <div className="max-w-5xl mx-auto w-full pointer-events-auto">
-        <motion.h2 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-4xl font-bold tracking-tight text-white mb-12 glow-text-cyan"
-        >
-          Projects
-        </motion.h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-container">
-          {PORTFOLIO_DATA.projects.map((project, idx) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ delay: idx * 0.1, duration: 0.5 }}
-              className="h-full"
-            >
-              <ProjectCard project={project} onOpenModal={(p) => { setSelectedProject(p); setModalImgIndex(0); }} />
-            </motion.div>
-          ))}
+    <>
+      <section id="projects" className="min-h-[120vh] py-24 px-6 flex items-center relative z-10 pointer-events-none">
+        <div className="max-w-5xl mx-auto w-full pointer-events-auto">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl font-bold tracking-tight text-white mb-12 glow-text-cyan"
+          >
+            Projects
+          </motion.h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-container">
+            {PORTFOLIO_DATA.projects.map((project, idx) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: idx * 0.1, duration: 0.5 }}
+                className="h-full"
+              >
+                <ProjectCard project={project} onOpenModal={(p) => { setSelectedProject(p); setModalImgIndex(0); }} />
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       <AnimatePresence>
         {selectedProject && (
           <motion.div 
+            key="interface-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 md:p-12 pointer-events-auto"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 md:p-12 pointer-events-auto"
             onClick={() => setSelectedProject(null)}
           >
             <motion.div 
@@ -247,6 +252,6 @@ export default function Projects() {
           </motion.div>
         )}
       </AnimatePresence>
-    </section>
+    </>
   );
 }
