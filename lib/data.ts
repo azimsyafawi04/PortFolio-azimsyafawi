@@ -33,7 +33,7 @@ export const PORTFOLIO_DATA = {
       image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop",
       tags: ["Cybersecurity", "Splunk", "Wazuh"],
       githubUrl: "https://github.com/azimsyafawi04/soc_simulator",
-      liveUrl: "#"
+      liveUrl: "/soc-simulator/index.html"
     },
     {
       id: 4,
