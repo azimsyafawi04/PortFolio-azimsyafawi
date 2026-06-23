@@ -17,6 +17,16 @@ export const PORTFOLIO_DATA = {
   ],
   projects: [
     {
+      id: 8,
+      title: "Point of Sale (POS) System",
+      description: "A comprehensive Point of Sale project built for efficient retail transactions and business management.",
+      price: "MYR 1,000",
+      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
+      tags: ["POS System", "Software", "Management"],
+      githubUrl: "https://github.com/azimsyafawi04/Point-of-Sale-project-",
+      liveUrl: "#"
+    },
+    {
       id: 3,
       title: "SOC Simulator",
       description: "A Security Operations Center simulation environment designed for threat detection, log analysis, and incident response training.",
