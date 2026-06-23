@@ -99,7 +99,7 @@ function ProjectCard({ project, onOpenModal }: { project: any, onOpenModal: (pro
               href={project.githubUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 hover:glow-text-purple transition-all"
+              className="flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 hover:glow-text-purple transition-all relative z-50 cursor-pointer"
             >
               <FaGithub className="w-4 h-4" />
               Code
@@ -110,7 +110,7 @@ function ProjectCard({ project, onOpenModal }: { project: any, onOpenModal: (pro
                 href={project.liveUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300 hover:glow-text-cyan transition-all ml-auto"
+                className="flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300 hover:glow-text-cyan transition-all ml-auto relative z-50 cursor-pointer"
               >
                 <ExternalLink className="w-4 h-4" />
                 Live Demo
@@ -154,8 +154,8 @@ export default function Projects() {
 
   return (
     <>
-      <section id="projects" className="min-h-[120vh] py-24 px-6 flex items-center relative z-10 pointer-events-none">
-        <div className="max-w-5xl mx-auto w-full pointer-events-auto">
+      <section id="projects" className="min-h-[120vh] py-24 px-6 flex items-center relative z-10">
+        <div className="max-w-5xl mx-auto w-full">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
