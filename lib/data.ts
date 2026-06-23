@@ -29,7 +29,7 @@ export const PORTFOLIO_DATA = {
     {
       id: 3,
       title: "SOC Simulator",
-      description: "A Security Operations Center simulation environment designed for threat detection, log analysis, and incident response training.",
+      description: "A Security Operations Center simulation environment designed for threat detection, log analysis, and incident response training. (Login: admin@soc.con / 12345)",
       image: "/soc-simulator-thumb.png",
       tags: ["Cybersecurity", "Splunk", "Wazuh"],
       githubUrl: "https://github.com/azimsyafawi04/soc_simulator",
@@ -47,7 +47,7 @@ export const PORTFOLIO_DATA = {
     },
     {
       id: 5,
-      title: "Basic Web Package Demo",
+      title: "Basic Web Package",
       description: "Starter Business Page: 1-page responsive landing page for your business with contact form, basic info, and social media.",
       price: "MYR 348.71",
       features: ["1 Page", "Functional website", "Content upload", "Social media icons", "1 Plugin", "2 Revisions", "4 Days Delivery"],
@@ -59,7 +59,7 @@ export const PORTFOLIO_DATA = {
     },
     {
       id: 6,
-      title: "Standard Web Package Demo",
+      title: "Standard Web Package",
       description: "Professional Business Site: Up to 5 pages responsive website with live chat integration, dynamic forms, and custom booking.",
       price: "MYR 2,638",
       features: ["5 Pages", "Opt-in form & Autoresponder", "Speed optimization", "3 Plugins", "4 Revisions", "10 Days Delivery"],
