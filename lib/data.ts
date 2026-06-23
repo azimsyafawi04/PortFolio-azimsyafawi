@@ -80,6 +80,15 @@ export const PORTFOLIO_DATA = {
       tags: ["HTML", "CSS", "JavaScript", "Advanced UI"],
       githubUrl: "#",
       liveUrl: "#"
+    },
+    {
+      id: 8,
+      title: "Smart Campus (SSIIMS)",
+      description: "Secure Student Information & Identity Management System. Features RBAC, secure login view, student portal, and admin console.",
+      image: "/smart-campus-thumb.png",
+      tags: ["HTML5", "CSS3", "JavaScript", "RBAC", "Security"],
+      githubUrl: "https://github.com/azimsyafawi04/SSCSS-Smart-Campus",
+      liveUrl: "/smart-campus/index.html"
     }
   ],
   contact: {
