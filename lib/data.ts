@@ -42,8 +42,8 @@ export const PORTFOLIO_DATA = {
       image: "/as-shop-1.png",
       images: ["/as-shop-1.png", "/as-shop-2.png", "/as-shop-3.png"],
       tags: ["HTML5", "CSS3", "UI/UX"],
-      githubUrl: "#",
-      liveUrl: "#"
+      githubUrl: "https://github.com/azimsyafawi04/AS-SHOP-STUDIO-website-shopping-",
+      liveUrl: "/as-shop-studio/index.html"
     },
     {
       id: 5,
