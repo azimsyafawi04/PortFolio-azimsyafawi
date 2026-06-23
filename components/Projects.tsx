@@ -57,9 +57,32 @@ function ProjectCard({ project, onOpenModal }: { project: any, onOpenModal: (pro
         
         <div className="p-6 flex flex-col flex-grow relative z-10">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-xl font-bold text-white group-hover:glow-text-cyan transition-all">
-              {project.title}
-            </h3>
+            {project.liveUrl !== "#" ? (
+              <a 
+                href={project.liveUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="relative z-50 inline-block"
+              >
+                <h3 className="text-xl font-bold text-white group-hover:glow-text-cyan transition-all cursor-pointer hover:text-cyan-300 hover:underline">
+                  {project.title}
+                </h3>
+              </a>
+            ) : (
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenModal(project);
+                }}
+                className="relative z-50 text-left inline-block"
+              >
+                <h3 className="text-xl font-bold text-white group-hover:glow-text-cyan transition-all cursor-pointer hover:text-cyan-300 hover:underline">
+                  {project.title}
+                </h3>
+              </button>
+            )}
             {'price' in project && (
               <span className="text-cyan-400 font-bold whitespace-nowrap ml-4 bg-cyan-950/40 px-2 py-1 rounded shadow-[0_0_10px_rgba(0,245,255,0.2)] border border-cyan-500/30">
                 {project.price}
