@@ -70,7 +70,7 @@ export const PORTFOLIO_DATA = {
       image: "/mobile-restaurant-thumb.png",
       tags: ["Flutter", "Dart", "Mobile App", "UI/UX", "Restaurant"],
       githubUrl: "https://github.com/azimsyafawi04/mobile-Restaurent-Premium-Package",
-      liveUrl: "#"
+      liveUrl: "/mobile-restaurant/index.html"
     }
   ],
   packages: [

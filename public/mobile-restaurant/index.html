@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Restaurant Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .phone-mockup {
+            width: 375px;
+            height: 812px;
+            background-color: #1e293b;
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5), inset 0 0 0 10px #000;
+            position: relative;
+            overflow: hidden;
+        }
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 30px;
+            background-color: #000;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 50;
+        }
+        .app-content {
+            height: 100%;
+            overflow-y: auto;
+            padding: 40px 20px 80px 20px;
+            scrollbar-width: none;
+        }
+        .app-content::-webkit-scrollbar { display: none; }
+        .glass-header {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .bottom-nav {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            right: 20px;
+            height: 65px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            fill: #64748b;
+        }
+        .nav-icon.active {
+            fill: #ffd700;
+        }
+        .food-card {
+            background: linear-gradient(145deg, #2a3b52, #1e293b);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .food-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="absolute top-4 left-4 text-center text-slate-400 text-sm max-w-sm">
+        <div class="font-bold text-amber-400 mb-2">Interactive Mockup Mode</div>
+        This is a web-simulated interactive UI of the Mobile Flutter App for demonstration purposes.
+    </div>
+
+    <div class="phone-mockup">
+        <div class="notch"></div>
+        
+        <div class="app-content">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8 pt-4">
+                <div>
+                    <h2 class="text-gray-400 text-sm">Delivery to</h2>
+                    <h1 class="text-xl font-bold flex items-center gap-1">
+                        Home, Kuala Lumpur 
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </h1>
+                </div>
+                <div class="w-12 h-12 bg-slate-700 rounded-full border-2 border-amber-400 overflow-hidden">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Azim" alt="User">
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="bg-slate-800 rounded-2xl p-4 flex items-center gap-3 mb-8">
+                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" placeholder="Find premium food..." class="bg-transparent border-none outline-none text-white w-full placeholder-slate-400">
+            </div>
+
+            <!-- Categories -->
+            <div class="flex gap-4 overflow-x-auto mb-8 pb-2" style="scrollbar-width: none;">
+                <div class="flex flex-col items-center gap-2 min-w-[70px]">
+                    <div class="w-16 h-16 bg-amber-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-amber-400/20">🍔</div>
+                    <span class="text-sm font-medium">Burger</span>
+                </div>
+                <div class="flex flex-col items-center gap-2 min-w-[70px]">
+                    <div class="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl">🍕</div>
+                    <span class="text-sm font-medium text-slate-400">Pizza</span>
+                </div>
+                <div class="flex flex-col items-center gap-2 min-w-[70px]">
+                    <div class="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl">🍣</div>
+                    <span class="text-sm font-medium text-slate-400">Sushi</span>
+                </div>
+                <div class="flex flex-col items-center gap-2 min-w-[70px]">
+                    <div class="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl">🥩</div>
+                    <span class="text-sm font-medium text-slate-400">Steak</span>
+                </div>
+            </div>
+
+            <!-- Popular Items -->
+            <div class="flex justify-between items-end mb-4">
+                <h2 class="text-2xl font-bold">Popular Now</h2>
+                <span class="text-amber-400 text-sm font-medium">View All</span>
+            </div>
+
+            <div class="food-card">
+                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1000&auto=format&fit=crop" alt="Burger" class="food-img">
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-bold">Premium Wagyu Burger</h3>
+                        <span class="flex items-center text-sm font-bold"><span class="text-amber-400 mr-1">★</span> 4.9</span>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Double wagyu beef, caramelized onions, truffle mayo.</p>
+                    <div class="flex justify-between items-center">
+                        <div class="text-xl font-bold">RM 45.00</div>
+                        <button class="bg-amber-400 text-slate-900 w-10 h-10 rounded-xl font-bold text-xl flex justify-center items-center hover:bg-amber-300 transition-colors">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="food-card">
+                <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1000&auto=format&fit=crop" alt="Pizza" class="food-img">
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-bold">Truffle Mushroom Pizza</h3>
+                        <span class="flex items-center text-sm font-bold"><span class="text-amber-400 mr-1">★</span> 4.8</span>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Wild mushrooms, mozzarella, fresh truffles.</p>
+                    <div class="flex justify-between items-center">
+                        <div class="text-xl font-bold">RM 68.00</div>
+                        <button class="bg-amber-400 text-slate-900 w-10 h-10 rounded-xl font-bold text-xl flex justify-center items-center hover:bg-amber-300 transition-colors">+</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <svg class="nav-icon active" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <div class="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center -translate-y-4 shadow-lg shadow-amber-400/30">
+                <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+            </div>
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+    </div>
+</body>
+</html>
