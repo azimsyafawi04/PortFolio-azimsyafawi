@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Secure Inventory</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .badge {
+            background-color: #ff4757;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        body {
+            background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.8)),
+            url("images/background.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: white;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <div class="logo">
+            <a href="#" style="color: var(--primary-color); font-size: 1.5rem; font-weight: 700; text-decoration: none;">SECURE INV</a>
+        </div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Login</a>
+            <a href="#" class="btn btn-primary" style="margin-left: 1rem;">Register</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Mockup Notice -->
+        <div class="alert alert-info" style="margin-bottom: 2rem;">
+            <strong>Demo Mode:</strong> This is a frontend mockup of the Secure Task App (Django Backend). Login functionality is simulated.
+        </div>
+
+        <div style="max-width: 450px; margin: 2rem auto;">
+            <div class="glass-card">
+                <h2 style="margin-bottom: 2rem; text-align: center;">Welcome Back</h2>
+                <form onsubmit="event.preventDefault(); window.location.href='dashboard.html';">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.875rem;">Username</label>
+                        <input type="text" name="username" required value="admin" />
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.875rem;">Password</label>
+                        <input type="password" name="password" required value="password123" />
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 1rem;">Sign In</button>
+                </form>
+                <p style="text-align: center; margin-top: 2rem; color: var(--text-muted);">
+                    Don't have an account? <a href="#" style="color: var(--primary-color)">Register here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.875rem;">
+        &copy; 2025 Secure Inventory System. OWASP ASVS Compliant.
+    </footer>
+</body>
+</html>

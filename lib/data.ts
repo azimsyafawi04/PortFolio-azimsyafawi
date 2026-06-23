@@ -53,6 +53,15 @@ export const PORTFOLIO_DATA = {
       tags: ["HTML5", "CSS3", "JavaScript", "RBAC", "Security"],
       githubUrl: "https://github.com/azimsyafawi04/SSCSS-Smart-Campus",
       liveUrl: "/smart-campus/index.html"
+    },
+    {
+      id: 9,
+      title: "Secure Task App",
+      description: "A Secure Task Management Web Application focusing on OWASP Top 10 compliance, RBAC, Data Validation, and Secure Authentication.",
+      image: "/secure-task-thumb.png",
+      tags: ["Django", "Python", "OWASP", "RBAC", "Cybersecurity"],
+      githubUrl: "https://github.com/azimsyafawi04/secure-task-app-ssd-project",
+      liveUrl: "/secure-task-app/index.html"
     }
   ],
   packages: [
