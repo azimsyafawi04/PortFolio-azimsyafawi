@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganography App - Live Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --sidebar-color: #1a1a2e;
+            --accent-color: #7f5af0;
+            --secondary-color: #2cb67d;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { background-color: var(--sidebar-color); width: 250px; flex-shrink: 0; padding: 2rem 0; display: flex; flex-direction: column; }
+        .main-content { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        .nav-btn {
+            display: flex; align-items: center; padding: 1rem 2rem; color: #d1d5db; text-decoration: none; font-weight: 500; transition: all 0.2s; cursor: pointer; border-left: 4px solid transparent;
+        }
+        .nav-btn:hover { background-color: rgba(255,255,255,0.05); }
+        .nav-btn.active { background-color: rgba(127, 90, 240, 0.1); border-left-color: var(--accent-color); color: white; }
+        
+        .card { background-color: var(--sidebar-color); border-radius: 12px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .dropzone {
+            border: 2px dashed var(--accent-color); border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background-color: rgba(0,0,0,0.2);
+        }
+        .dropzone:hover { background-color: rgba(127, 90, 240, 0.1); }
+        .form-input {
+            width: 100%; background-color: #0f0f0f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.75rem 1rem; color: white; margin-top: 0.5rem; outline: none;
+        }
+        .form-input:focus { border-color: var(--accent-color); }
+        .btn-primary {
+            background-color: var(--accent-color); color: white; font-weight: 600; padding: 0.75rem 2rem; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-primary:hover { background-color: #6b47dc; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Progress Bar */
+        .progress-bar { width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 1.5rem; display: none; }
+        .progress-fill { height: 100%; background-color: var(--accent-color); width: 0%; transition: width 0.1s linear; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h1 class="text-2xl font-bold px-8 mb-8 text-white">Stego Tool</h1>
+        
+        <div class="nav-btn active" onclick="switchTab('encode')">
+            <span class="mr-3">🔒</span> Encode
+        </div>
+        <div class="nav-btn" onclick="switchTab('decode')">
+            <span class="mr-3">🔓</span> Decode
+        </div>
+        <div class="nav-btn" onclick="switchTab('analyse')">
+            <span class="mr-3">📊</span> Analyse
+        </div>
+
+        <div class="mt-auto px-8 text-gray-500 text-sm">
+            v2.0.0 (Web Mockup)
+        </div>
+    </div>
+
+    <div class="main-content relative">
+        <!-- Interactive Mockup Notice -->
+        <div class="absolute top-4 right-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-lg text-sm flex items-center">
+            <span class="mr-2">⚡</span> Interactive Mockup Demo
+        </div>
+
+        <!-- Encode Tab -->
+        <div id="encode-tab" class="tab-content active max-w-3xl">
+            <h2 class="text-3xl font-bold mb-6">Encode Secret Message</h2>
+            
+            <div class="card mb-6">
+                <div class="mb-6">
+                    <label class="block font-semibold mb-2">1. Select Cover File (.png, .bmp, .wav)</label>
+                    <div class="dropzone" id="enc-dropzone" onclick="simulateFileUpload('enc-dropzone')">
+                        Click to browse files...
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block font-semibold mb-2">2. Secret Message</label>
+                    <textarea class="form-input" rows="4" placeholder="Enter your secret message here..."></textarea>
+                    <button class="text-sm text-gray-400 hover:text-white mt-2 flex items-center">
+                        <span class="mr-1">📄</span> Load .txt File
+                    </button>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block font-semibold mb-2">3. Secure Password</label>
+                    <div class="flex gap-4">
+                        <input type="password" class="form-input m-0" placeholder="Password">
+                        <input type="password" class="form-input m-0" placeholder="Confirm Password">
+                    </div>
+                </div>
+
+                <div class="progress-bar" id="enc-progress">
+                    <div class="progress-fill" id="enc-fill"></div>
+                </div>
+                <div id="enc-status" class="text-sm mt-2 text-[#2cb67d] hidden">Successfully encoded! You can view the analysis now.</div>
+
+                <button class="btn-primary w-full mt-6" onclick="simulateEncode()">Encode & Save</button>
+            </div>
+        </div>
+
+        <!-- Decode Tab -->
+        <div id="decode-tab" class="tab-content max-w-3xl">
+            <h2 class="text-3xl font-bold mb-6">Decode Secret Message</h2>
+            
+            <div class="card mb-6" style="border-color: var(--secondary-color);">
+                <div class="mb-6">
+                    <label class="block font-semibold mb-2">1. Select Stego File (.png, .wav)</label>
+                    <div class="dropzone" id="dec-dropzone" style="border-color: var(--secondary-color);" onclick="simulateFileUpload('dec-dropzone')">
+                        Click to browse files...
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block font-semibold mb-2">2. Password</label>
+                    <input type="password" class="form-input" placeholder="Password">
+                </div>
+
+                <div class="progress-bar" id="dec-progress">
+                    <div class="progress-fill" id="dec-fill" style="background-color: var(--secondary-color);"></div>
+                </div>
+                <div id="dec-status" class="text-sm mt-2 text-[#2cb67d] hidden">Decoded successfully!</div>
+
+                <button class="btn-primary w-full mt-6" style="background-color: var(--secondary-color);" onclick="simulateDecode()">Decode</button>
+
+                <div class="mt-8 border-t border-gray-800 pt-6">
+                    <label class="block font-semibold mb-2">Decoded Message:</label>
+                    <textarea class="form-input" rows="4" id="dec-output" readonly></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyse Tab -->
+        <div id="analyse-tab" class="tab-content max-w-4xl">
+            <h2 class="text-3xl font-bold mb-6">Analysis Report</h2>
+            
+            <div class="grid grid-cols-3 gap-6 mb-6">
+                <div class="bg-[#1a1a2e] rounded-xl p-6 border border-gray-800 text-center">
+                    <div class="text-gray-400 text-sm mb-2">Cover Size</div>
+                    <div class="text-2xl font-bold text-white">1,240.50 KB</div>
+                </div>
+                <div class="bg-[#1a1a2e] rounded-xl p-6 border border-gray-800 text-center">
+                    <div class="text-gray-400 text-sm mb-2">Stego Size</div>
+                    <div class="text-2xl font-bold text-[#2cb67d]">1,240.55 KB</div>
+                </div>
+                <div class="bg-[#1a1a2e] rounded-xl p-6 border border-gray-800 text-center">
+                    <div class="text-gray-400 text-sm mb-2">Chi-Square p-value</div>
+                    <div class="text-2xl font-bold text-amber-400">0.9984</div>
+                </div>
+            </div>
+
+            <div class="bg-[#1a1a2e] rounded-xl p-6 border border-gray-800 h-64 flex flex-col items-center justify-center">
+                <div class="text-gray-400 mb-4">Histogram Analysis Visualization</div>
+                <!-- Simulated Chart -->
+                <div class="w-full max-w-2xl h-40 flex items-end justify-center gap-1 opacity-50">
+                    <div class="w-2 bg-[#7f5af0] h-[30%]"></div>
+                    <div class="w-2 bg-[#2cb67d] h-[45%]"></div>
+                    <div class="w-2 bg-[#7f5af0] h-[80%]"></div>
+                    <div class="w-2 bg-[#2cb67d] h-[60%]"></div>
+                    <div class="w-2 bg-[#7f5af0] h-[90%]"></div>
+                    <div class="w-2 bg-[#2cb67d] h-[100%]"></div>
+                    <div class="w-2 bg-[#7f5af0] h-[85%]"></div>
+                    <div class="w-2 bg-[#2cb67d] h-[50%]"></div>
+                    <div class="w-2 bg-[#7f5af0] h-[30%]"></div>
+                    <div class="w-2 bg-[#2cb67d] h-[20%]"></div>
+                </div>
+                <div class="text-xs text-gray-500 mt-2">Distribution of LSBs across color channels</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId + '-tab').classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function simulateFileUpload(id) {
+            const el = document.getElementById(id);
+            el.innerHTML = "📸 secret_cover_image.png (1.2 MB)";
+            el.style.backgroundColor = "rgba(127, 90, 240, 0.2)";
+        }
+
+        function simulateEncode() {
+            const bar = document.getElementById('enc-progress');
+            const fill = document.getElementById('enc-fill');
+            const status = document.getElementById('enc-status');
+            
+            bar.style.display = 'block';
+            status.style.display = 'none';
+            fill.style.width = '0%';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                fill.style.width = progress + '%';
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        bar.style.display = 'none';
+                        status.style.display = 'block';
+                    }, 500);
+                }
+            }, 50);
+        }
+
+        function simulateDecode() {
+            const bar = document.getElementById('dec-progress');
+            const fill = document.getElementById('dec-fill');
+            const status = document.getElementById('dec-status');
+            const output = document.getElementById('dec-output');
+            
+            bar.style.display = 'block';
+            status.style.display = 'none';
+            output.value = '';
+            fill.style.width = '0%';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                fill.style.width = progress + '%';
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        bar.style.display = 'none';
+                        status.style.display = 'block';
+                        output.value = "CLASSIFIED DATA: The attack will commence at dawn. Destroy this message after reading.";
+                    }, 500);
+                }
+            }, 50);
+        }
+    </script>
+</body>
+</html>

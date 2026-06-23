@@ -71,6 +71,15 @@ export const PORTFOLIO_DATA = {
       tags: ["Flutter", "Dart", "Mobile App", "UI/UX", "Restaurant"],
       githubUrl: "https://github.com/azimsyafawi04/mobile-Restaurent-Premium-Package",
       liveUrl: "/mobile-restaurant/index.html"
+    },
+    {
+      id: 11,
+      title: "Steganography App",
+      description: "Advanced Python Desktop Application for hiding secret messages inside images and audio files with AES encryption.",
+      image: "/steganography-thumb.png",
+      tags: ["Python", "CustomTkinter", "Cybersecurity", "Cryptography", "LSB"],
+      githubUrl: "https://github.com/azimsyafawi04/Steganography-App-",
+      liveUrl: "/steganography-app/index.html"
     }
   ],
   packages: [
