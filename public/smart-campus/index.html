@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSCSS - Secure Smart Campus Services System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Modern CSS Custom Properties / Design Tokens */
+        :root {
+            --bg-gradient: radial-gradient(circle at 0% 0%, #0d1527 0%, #070a13 100%);
+            --card-bg: rgba(13, 22, 41, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-border-glow: rgba(59, 130, 246, 0.3);
+            
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.2);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.2);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --sidebar-width: 260px;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Base Resets */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .text-glow-blue { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .text-glow-success { text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+
+        .glass-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: var(--transition-smooth);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        /* --- Scrollbar styling --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(7, 10, 19, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.4); }
+
+        /* --- Custom Toasts --- */
+        #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(13, 22, 41, 0.95);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            color: var(--text-primary);
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            backdrop-filter: blur(8px);
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.warning { border-left-color: var(--warning); }
+        .toast-content { flex-grow: 1; }
+        .toast-title { font-weight: 600; font-size: 14px; }
+        .toast-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* --- 1. Login View Styles --- */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            position: relative;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .login-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 70%);
+            top: -100px;
+            left: -100px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .login-header { text-align: center; margin-bottom: 32px; }
+        .login-icon-box {
+            width: 64px; height: 64px; margin: 0 auto 16px;
+            background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); color: var(--primary);
+            position: relative;
+        }
+        .login-icon-box::after {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%;
+            border: 1px dashed rgba(59, 130, 246, 0.25); animation: rotateDashed 20s linear infinite;
+        }
+        @keyframes rotateDashed { 100% { transform: rotate(360deg); } }
+        .login-title { font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+        .login-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-wrapper { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px; pointer-events: none; transition: var(--transition-smooth); }
+        .form-input {
+            width: 100%; padding: 14px 16px 14px 44px;
+            background: rgba(7, 10, 19, 0.6); border: 1px solid var(--card-border);
+            border-radius: 10px; color: var(--text-primary); font-size: 14px;
+            transition: var(--transition-smooth);
+        }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); background: rgba(7, 10, 19, 0.9); }
+        .form-input:focus + .input-icon { color: var(--primary); }
+        select.form-input { appearance: none; cursor: pointer; }
+        .select-arrow { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; width: 16px; height: 16px; }
+        .btn-toggle-password { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: var(--transition-smooth); }
+        .btn-toggle-password:hover { color: var(--text-primary); }
+
+        .btn-submit {
+            width: 100%; padding: 14px; background: var(--primary); border: none; border-radius: 10px;
+            color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition-smooth);
+            display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px 0 var(--primary-glow); margin-top: 8px;
+        }
+        .btn-submit:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 20px 0 var(--primary-glow); }
+        .btn-submit:active { transform: translateY(1px); }
+
+        .credential-helper { margin-top: 24px; padding: 16px; border-radius: 10px; background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.2); }
+        .credential-helper-title { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .credential-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px; }
+        .credential-role { font-weight: 600; color: var(--text-primary); }
+        .credential-info { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: var(--transition-smooth); }
+        .credential-info:hover { color: var(--primary); }
+
+        /* --- 2. Dashboard Layout Styles --- */
+        .dashboard-container { display: flex; min-height: 100vh; width: 100%; animation: fadeIn 0.4s ease-out forwards; }
+        .sidebar {
+            width: var(--sidebar-width); background: rgba(7, 10, 19, 0.85); border-right: 1px solid var(--card-border);
+            padding: 32px 20px; display: flex; flex-direction: column; justify-content: space-between;
+            position: fixed; height: 100vh; left: 0; top: 0; z-index: 100;
+        }
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .brand-logo { width: 36px; height: 36px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+        .brand-name { font-weight: 700; font-size: 18px; letter-spacing: -0.5px; color: var(--text-primary); }
+        .brand-version { font-size: 10px; padding: 2px 6px; background: rgba(59, 130, 246, 0.15); border-radius: 4px; color: var(--primary); margin-left: auto; font-weight: 700; }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .menu-item-link {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px;
+            color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;
+            transition: var(--transition-smooth); cursor: pointer;
+        }
+        .menu-item-link:hover, .menu-item-link.active { background: rgba(59, 130, 246, 0.08); color: var(--text-primary); box-shadow: inset 3px 0 0 0 var(--primary); }
+        .menu-item-link svg { width: 18px; height: 18px; transition: var(--transition-smooth); }
+        .menu-item-link:hover svg, .menu-item-link.active svg { color: var(--primary); }
+        .sidebar-user { padding-top: 20px; border-top: 1px solid var(--card-border); display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; background: rgba(59, 130, 246, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); border: 2px solid rgba(59, 130, 246, 0.3); }
+        .user-info { flex-grow: 1; overflow: hidden; }
+        .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-role-badge { display: inline-block; font-size: 10px; background: rgba(16, 185, 129, 0.15); color: var(--success); padding: 1px 6px; border-radius: 4px; margin-top: 2px; font-weight: 600; text-transform: uppercase; }
+        .user-role-badge.admin { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .btn-logout { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: var(--transition-smooth); }
+        .btn-logout:hover { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+
+        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; min-height: 100vh; display: flex; flex-direction: column; }
+        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; border-bottom: 1px solid var(--card-border); padding-bottom: 20px; }
+        .header-badge { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--primary); }
+        .header-badge.admin { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; flex-grow: 1; align-content: start;}
+        .col-12 { grid-column: span 12; }
+        .col-8 { grid-column: span 8; }
+        .col-6 { grid-column: span 6; }
+        .col-4 { grid-column: span 4; }
+        .card-header { padding: 24px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; }
+        .card-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .card-body { padding: 24px; }
+
+        .btn-action { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--primary); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--transition-smooth); }
+        .btn-action:hover { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px var(--primary-glow); transform: translateY(-1px); }
+        .btn-action.btn-danger { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .btn-action.btn-danger:hover { background: var(--danger); color: #ffffff; box-shadow: 0 4px 12px var(--danger-glow); }
+
+        textarea.form-input { resize: vertical; min-height: 100px; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .data-table th { padding: 14px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 2px solid var(--card-border); background: rgba(7, 10, 19, 0.3); }
+        .data-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--card-border); color: var(--text-primary); }
+        .data-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+        
+        .badge-role { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-role.student { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+        .badge-role.admin { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .badge-role.lecturer { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .badge-role.maintenance { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+
+        .audit-trail-container { max-height: 250px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 8px; background: rgba(7, 10, 19, 0.4); }
+        .audit-log-row { display: flex; padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); font-family: 'JetBrains Mono', monospace; font-size: 12px; align-items: center; gap: 12px; }
+        .audit-log-row:last-child { border: none; }
+        .audit-timestamp { color: var(--text-muted); white-space: nowrap; }
+        .audit-msg { color: var(--text-primary); flex-grow: 1; word-break: break-word; }
+
+        .security-metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .metric-card { padding: 18px; border-radius: 12px; background: rgba(7, 10, 19, 0.4); border: 1px solid var(--card-border); display: flex; flex-direction: column; gap: 8px; }
+        .metric-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+        .metric-value { font-size: 20px; font-weight: 800; color: var(--text-primary); }
+        .metric-value.success { color: var(--success); }
+        .metric-value.warning { color: var(--warning); }
+        .metric-value.danger { color: var(--danger); }
+
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .col-8, .col-6, .col-4 { grid-column: span 12; }
+            .security-metric-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--card-border); padding: 20px; }
+            .dashboard-container { flex-direction: column; }
+            .main-content { margin-left: 0; padding: 20px; }
+            .security-metric-grid { grid-template-columns: 1fr; }
+            .header-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div id="login-view" class="login-wrapper">
+        <div class="login-glow"></div>
+        <div class="login-card glass-panel">
+            <div class="login-header">
+                <div class="login-icon-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                </div>
+                <h1 class="login-title">Secure Login</h1>
+                <p class="login-subtitle">Secure Smart Campus Services System (SSCSS)</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label" for="login-id">User ID / Email</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        <input class="form-input" type="text" id="login-id" placeholder="name@sscss.edu" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                        <input class="form-input" type="password" id="login-password" placeholder="••••••••••••" required autocomplete="current-password">
+                        <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('login-password')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="login-role">Select Access Role</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                        </svg>
+                        <select class="form-input" id="login-role" required>
+                            <option value="Student">Student</option>
+                            <option value="Lecturer">Lecturer</option>
+                            <option value="Administrator">Administrator</option>
+                            <option value="Maintenance Staff">Maintenance Staff</option>
+                        </select>
+                        <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <span>Secure Login & Authenticate</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </button>
+            </form>
+
+            <div class="credential-helper">
+                <div class="credential-helper-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063 1.063L12 12.75l-1.041-.53a.75.75 0 111.063-1.063l.041.02a.75.75 0 00.438 0l.041-.02z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.25 8.25a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12c0 5.385 4.365 9.75 9.75 9.75s9.75-4.365 9.75-9.75S17.385 2.25 12 2.25 2.25 6.615 2.25 12z" />
+                    </svg>
+                    <span>Developer Demo Accounts</span>
+                </div>
+                <div class="credential-grid">
+                    <span class="credential-role">Student:</span>
+                    <span class="credential-info" onclick="fillCreds('student@sscss.edu', 'Student123!', 'Student')">student@sscss.edu / Student123!</span>
+                    <span class="credential-role">Admin:</span>
+                    <span class="credential-info" onclick="fillCreds('admin@sscss.edu', 'Admin123!', 'Administrator')">admin@sscss.edu / Admin123!</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-view" class="dashboard-container hidden">
+        <aside class="sidebar">
+            <div>
+                <div class="sidebar-brand">
+                    <div class="brand-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                    </div>
+                    <span class="brand-name">SSCSS</span>
+                    <span class="brand-version" id="brand-role-badge">v1.0</span>
+                </div>
+
+                <ul class="sidebar-menu">
+                    <li>
+                        <a class="menu-item-link active" id="tab-home" onclick="switchTab('home')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                            </svg>
+                            <span>Dashboard Home</span>
+                        </a>
+                    </li>
+                    <li id="menu-booking">
+                        <a class="menu-item-link" id="tab-booking" onclick="switchTab('booking')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
+                            </svg>
+                            <span>Classroom/Lab Booking</span>
+                        </a>
+                    </li>
+                    <li id="menu-maintenance">
+                        <a class="menu-item-link" id="tab-maintenance" onclick="switchTab('maintenance')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.827M15.75 15.75l-2.456-2.456M12.75 12l2.28-2.28M15.75 15.75L12 12m0 0l-3.75 3.75m0 0l-2.456-2.456M6 12L3.72 9.72m2.28 2.28L6 8.25m0 0l2.28-2.28m-2.28 2.28L3.72 6m2.28 2.28L8.25 6" />
+                            </svg>
+                            <span>Maintenance Request</span>
+                        </a>
+                    </li>
+                    <li id="menu-admin" class="hidden">
+                        <a class="menu-item-link" id="tab-admin" onclick="switchTab('admin')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25M19.5 5.25a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25m15 0V3H4.5v2.25" />
+                            </svg>
+                            <span>Security Dashboard</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="user-avatar" id="user-avatar-letter">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="user-display-name">User Name</div>
+                        <div class="user-role-badge" id="user-role-badge">Role</div>
+                    </div>
+                    <button class="btn-logout" onclick="handleLogout()" title="Log out securely">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header-bar">
+                <div>
+                    <h2 class="page-title" id="page-title">Dashboard</h2>
+                    <p class="page-subtitle" id="page-subtitle">Welcome to Secure Smart Campus Services System.</p>
+                </div>
+                <div class="header-badge" id="header-status-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    <span>Session Validated</span>
+                </div>
+            </header>
+
+            <div id="section-home" class="dashboard-grid">
+                <section class="col-12 glass-panel">
+                    <div class="card-header">
+                        <h3 class="card-title">Welcome to SSCSS Prototype</h3>
+                    </div>
+                    <div class="card-body">
+                        <p style="color: var(--text-secondary); line-height: 1.6;">
+                            This is the integrated portal for campus services, developed to solve double bookings and delayed maintenance responses. Please use the sidebar to navigate to the Classroom Booking or Maintenance Request modules. Access to specific modules is strictly controlled via Role-Based Access Control (RBAC).
+                        </p>
+                    </div>
+                </section>
+                
+                <div class="col-6 glass-panel" id="home-booking-summary">
+                    <div class="card-header"><h3 class="card-title">Your Active Bookings</h3></div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Facility</th><th>Date & Time</th><th>Status</th></tr></thead>
+                                <tbody id="home-booking-table">
+                                    <tr><td colspan="3" style="text-align:center; color: var(--text-muted); font-style: italic;">No active reservations</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6 glass-panel" id="home-maintenance-summary">
+                    <div class="card-header"><h3 class="card-title">Recent Maintenance Reports</h3></div>
+                    <div class="card-body">
+                         <div style="display: flex; flex-direction: column; gap: 8px;" id="maintenance-list-target">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(7, 10, 19, 0.4); border: 1px solid var(--card-border); border-radius: 8px;">
+                                <div>
+                                    <div style="font-weight:600; font-size:13px;">Penhuni KKSJT</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Aircond bocor di bilik study</div>
+                                </div>
+                                <span class="badge-role lecturer" style="font-size: 10px; padding: 2px 6px;">Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-booking" class="dashboard-grid hidden">
+                <section class="col-6 glass-panel">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px; color: var(--primary);">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Book Classroom / Lab Session</span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form onsubmit="submitReservation(event)">
+                            <div class="form-group">
+                                <label class="form-label" for="booking-select">Available Facilities</label>
+                                <div class="input-wrapper">
+                                    <select class="form-input" id="booking-select" style="padding-left: 16px;" required>
+                                        <option value="" disabled selected>Select a facility...</option>
+                                        <option value="Lecture Hall A (Capacity: 150)">Lecture Hall A (Capacity: 150)</option>
+                                        <option value="Lecture Hall B (Capacity: 80)">Lecture Hall B (Capacity: 80)</option>
+                                        <option value="General Computing Lab 1">General Computing Lab 1</option>
+                                        <option value="Cybersecurity Isolated Lab">Cybersecurity Isolated Lab</option>
+                                    </select>
+                                    <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div>
+                                    <label class="form-label" for="booking-date">Reservation Date</label>
+                                    <input class="form-input" type="date" id="booking-date" style="padding-left: 16px;" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="booking-time">Time Slot</label>
+                                    <div class="input-wrapper">
+                                        <select class="form-input" id="booking-time" style="padding-left: 16px;" required>
+                                            <option value="08:00 AM - 10:00 AM">08:00 AM - 10:00 AM</option>
+                                            <option value="10:00 AM - 12:00 PM">10:00 AM - 12:00 PM</option>
+                                            <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM</option>
+                                        </select>
+                                        <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn-submit">Confirm Reservation</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <div id="section-maintenance" class="dashboard-grid hidden">
+                <section class="col-8 glass-panel">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px; color: var(--warning);">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.827M15.75 15.75l-2.456-2.456M12.75 12l2.28-2.28M15.75 15.75L12 12m0 0l-3.75 3.75m0 0l-2.456-2.456M6 12L3.72 9.72m2.28 2.28L6 8.25m0 0l2.28-2.28m-2.28 2.28L3.72 6m2.28 2.28L8.25 6" />
+                            </svg>
+                            <span>Submit Direct Maintenance Notice</span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form onsubmit="submitMaintenance(event)">
+                            <div class="form-group">
+                                <label class="form-label" for="maint-location">Facility / Location Target</label>
+                                <div class="input-wrapper">
+                                    <select class="form-input" id="maint-location" style="padding-left: 16px;" required>
+                                        <option value="" disabled selected>Select location...</option>
+                                        <option value="Penhuni KKSJT (Hostel Block)">Penhuni KKSJT (Hostel Block)</option>
+                                        <option value="Academic Block A">Academic Block A</option>
+                                        <option value="Main Library">Main Library</option>
+                                    </select>
+                                    <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="maint-issue">Issue Type</label>
+                                <div class="input-wrapper">
+                                    <select class="form-input" id="maint-issue" style="padding-left: 16px;" required>
+                                        <option value="Electrical / Lighting">Electrical / Lighting</option>
+                                        <option value="Plumbing / Water">Plumbing / Water</option>
+                                        <option value="Air Conditioning">Air Conditioning</option>
+                                        <option value="Network / WiFi">Network / WiFi</option>
+                                    </select>
+                                    <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="maint-desc">Details (Direct Notice)</label>
+                                <textarea class="form-input" id="maint-desc" style="padding-left: 16px; padding-top: 12px;" placeholder="Describe the issue clearly. No extra safety steps required." required></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn-submit" style="background: var(--warning); box-shadow: 0 4px 14px 0 var(--warning-glow);">
+                                Submit Report Ticket
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <div id="section-admin" class="dashboard-grid hidden">
+                <div class="col-12 security-metric-grid" style="margin-bottom: 0;">
+                    <div class="metric-card"><span class="metric-label">Active Users</span><span class="metric-value" id="admin-metric-users">4</span></div>
+                    <div class="metric-card"><span class="metric-label">Threat Alerts</span><span class="metric-value success">0</span></div>
+                    <div class="metric-card"><span class="metric-label">SSL</span><span class="metric-value success">TLS 1.3</span></div>
+                    <div class="metric-card"><span class="metric-label">MFA Adoption</span><span class="metric-value warning">75%</span></div>
+                </div>
+
+                <section class="col-8 glass-panel">
+                    <div class="card-header"><h3 class="card-title">Identity & Role Management</h3></div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="data-table" id="users-table">
+                                <thead>
+                                    <tr><th>User Account</th><th>Email Address</th><th>Access Role</th><th>Status</th></tr>
+                                </thead>
+                                <tbody id="users-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="col-4 glass-panel">
+                    <div class="card-header"><h3 class="card-title">Audit Trail</h3></div>
+                    <div class="card-body">
+                        <div class="audit-trail-container" id="audit-logs-container"></div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Updated Accounts with proper SSCSS Roles
+        let accounts = [
+            { id: 1, name: "Student User", email: "student@sscss.edu", password: "Student123!", role: "Student" },
+            { id: 2, name: "Admin User", email: "admin@sscss.edu", password: "Admin123!", role: "Administrator" },
+            { id: 3, name: "Lecturer User", email: "lecturer@sscss.edu", password: "Lecturer123!", role: "Lecturer" },
+            { id: 4, name: "Maintenance Staff", email: "maintenance@sscss.edu", password: "Maint123!", role: "Maintenance Staff" }
+        ];
+
+        let auditLogs = [
+            { timestamp: new Date().toISOString().split('T')[1].slice(0, 8), message: "System initialized for MVP." }
+        ];
+
+        let currentUserSession = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSession = sessionStorage.getItem('sscss_session');
+            if (savedSession) {
+                currentUserSession = JSON.parse(savedSession);
+                setupDashboard(currentUserSession);
+            } else {
+                navigateTo('login-view');
+            }
+        });
+
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+
+        function fillCreds(email, password, role) {
+            document.getElementById('login-id').value = email;
+            document.getElementById('login-password').value = password;
+            document.getElementById('login-role').value = role;
+            triggerToast('Inputs Loaded', `Selected role: ${role}`, 'success');
+        }
+
+        function navigateTo(viewId) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function switchTab(tabName) {
+            // Hide all sections
+            document.getElementById('section-home').classList.add('hidden');
+            document.getElementById('section-booking').classList.add('hidden');
+            document.getElementById('section-maintenance').classList.add('hidden');
+            document.getElementById('section-admin').classList.add('hidden');
+            
+            // Remove active classes
+            document.querySelectorAll('.menu-item-link').forEach(el => el.classList.remove('active'));
+
+            const title = document.getElementById('page-title');
+            const sub = document.getElementById('page-subtitle');
+
+            if(tabName === 'home') {
+                document.getElementById('section-home').classList.remove('hidden');
+                document.getElementById('tab-home').classList.add('active');
+                title.innerText = "Dashboard";
+                sub.innerText = "Welcome to Secure Smart Campus Services System.";
+            } else if(tabName === 'booking') {
+                document.getElementById('section-booking').classList.remove('hidden');
+                document.getElementById('tab-booking').classList.add('active');
+                title.innerText = "Classroom & Lab Booking";
+                sub.innerText = "Integrated module for reserving campus facilities to avoid double booking.";
+            } else if(tabName === 'maintenance') {
+                document.getElementById('section-maintenance').classList.remove('hidden');
+                document.getElementById('tab-maintenance').classList.add('active');
+                title.innerText = "Maintenance Request";
+                sub.innerText = "Submit direct facility and infrastructure report tickets.";
+            } else if(tabName === 'admin') {
+                document.getElementById('section-admin').classList.remove('hidden');
+                document.getElementById('tab-admin').classList.add('active');
+                title.innerText = "Security Dashboard";
+                sub.innerText = "Manage users, access controls, and view audit trails.";
+                renderAdminUsersTable();
+                renderAuditTrail();
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('login-id').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
+            const roleSelect = document.getElementById('login-role').value;
+
+            const foundAccount = accounts.find(acc => acc.email.toLowerCase() === emailInput.toLowerCase());
+            if (!foundAccount || foundAccount.password !== passwordInput || foundAccount.role !== roleSelect) {
+                triggerToast('Authentication Failed', 'Invalid credentials or role mismatch.', 'error');
+                logAuditEvent(`Failed login attempt for ${emailInput}`);
+                return;
+            }
+
+            currentUserSession = foundAccount;
+            sessionStorage.setItem('sscss_session', JSON.stringify(currentUserSession));
+            setupDashboard(foundAccount);
+            logAuditEvent(`Successful login: ${foundAccount.email} (${foundAccount.role})`);
+            triggerToast('Success', `Authenticated as ${foundAccount.name}`, 'success');
+        }
+
+        function setupDashboard(user) {
+            // Update UI profile
+            document.getElementById('user-display-name').innerText = user.name;
+            document.getElementById('user-avatar-letter').innerText = user.name.charAt(0);
+            document.getElementById('user-role-badge').innerText = user.role;
+
+            const roleBadge = document.getElementById('user-role-badge');
+            const headerBadge = document.getElementById('header-status-badge');
+            
+            // Basic RBAC UI Adjustments
+            document.getElementById('menu-booking').classList.remove('hidden');
+            document.getElementById('menu-maintenance').classList.remove('hidden');
+            document.getElementById('menu-admin').classList.add('hidden');
+
+            roleBadge.className = 'user-role-badge'; // reset
+            headerBadge.className = 'header-badge';
+
+            if (user.role === 'Administrator') {
+                roleBadge.classList.add('admin');
+                headerBadge.classList.add('admin');
+                document.getElementById('menu-admin').classList.remove('hidden');
+                switchTab('admin');
+            } else if (user.role === 'Maintenance Staff') {
+                roleBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                roleBadge.style.color = 'var(--success)';
+                // Maintenance staff might not need booking
+                document.getElementById('menu-booking').classList.add('hidden');
+                switchTab('home');
+            } else {
+                // Student & Lecturer
+                switchTab('home');
+            }
+
+            navigateTo('app-view');
+        }
+
+        function handleLogout() {
+            if(currentUserSession) logAuditEvent(`User logged out: ${currentUserSession.email}`);
+            currentUserSession = null;
+            sessionStorage.removeItem('sscss_session');
+            navigateTo('login-view');
+        }
+
+        function submitReservation(e) {
+            e.preventDefault();
+            const lab = document.getElementById('booking-select').value;
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+
+            const table = document.getElementById('home-booking-table');
+            if(table.innerHTML.includes('No active reservations')) {
+                table.innerHTML = '';
+            }
+
+            table.innerHTML += `
+                <tr>
+                    <td style="font-weight: 600;">${escapeHTML(lab)}</td>
+                    <td>${escapeHTML(date)} | ${escapeHTML(time)}</td>
+                    <td><span class="badge-role student" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">Confirmed</span></td>
+                </tr>
+            `;
+
+            logAuditEvent(`${currentUserSession.email} booked facility: ${lab}`);
+            triggerToast('Reservation Confirmed', `Your slot for ${lab} is secured.`, 'success');
+            e.target.reset();
+            switchTab('home');
+        }
+
+        function submitMaintenance(e) {
+            e.preventDefault();
+            const loc = document.getElementById('maint-location').value;
+            const type = document.getElementById('maint-issue').value;
+            const desc = document.getElementById('maint-desc').value;
+
+            const target = document.getElementById('maintenance-list-target');
+            target.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(7, 10, 19, 0.4); border: 1px solid var(--card-border); border-radius: 8px;">
+                    <div>
+                        <div style="font-weight:600; font-size:13px;">${escapeHTML(loc)}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${escapeHTML(desc)} (${escapeHTML(type)})</div>
+                    </div>
+                    <span class="badge-role lecturer" style="font-size: 10px; padding: 2px 6px;">Just Now</span>
+                </div>
+            ` + target.innerHTML;
+
+            logAuditEvent(`Maintenance reported at ${loc} by ${currentUserSession.email}`);
+            triggerToast('Report Submitted', 'Maintenance ticket sent to facility management.', 'success');
+            e.target.reset();
+            switchTab('home');
+        }
+
+        function renderAdminUsersTable() {
+            const tableBody = document.getElementById('users-table-body');
+            tableBody.innerHTML = '';
+            accounts.forEach(acc => {
+                tableBody.innerHTML += `<tr><td>${escapeHTML(acc.name)}</td><td>${escapeHTML(acc.email)}</td><td>${escapeHTML(acc.role)}</td><td><span style="color:var(--success)">Active</span></td></tr>`;
+            });
+            document.getElementById('admin-metric-users').innerText = accounts.length;
+        }
+
+        function renderAuditTrail() {
+            const container = document.getElementById('audit-logs-container');
+            container.innerHTML = '';
+            [...auditLogs].reverse().forEach(log => {
+                container.innerHTML += `<div class="audit-log-row"><span class="audit-timestamp">[${log.timestamp}]</span><span class="audit-msg">${escapeHTML(log.message)}</span></div>`;
+            });
+        }
+
+        function logAuditEvent(message) {
+            auditLogs.push({ timestamp: new Date().toISOString().split('T')[1].slice(0, 8), message });
+            if (document.getElementById('section-admin').classList.contains('hidden') === false) {
+                renderAuditTrail();
+            }
+        }
+
+        function triggerToast(title, desc, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<div class="toast-content"><div class="toast-title">${escapeHTML(title)}</div><div class="toast-desc">${escapeHTML(desc)}</div></div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+    </script>
+</body>
+</html>
