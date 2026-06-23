@@ -62,6 +62,15 @@ export const PORTFOLIO_DATA = {
       tags: ["Django", "Python", "OWASP", "RBAC", "Cybersecurity"],
       githubUrl: "https://github.com/azimsyafawi04/secure-task-app-ssd-project",
       liveUrl: "/secure-task-app/index.html"
+    },
+    {
+      id: 10,
+      title: "Mobile Restaurant Premium",
+      description: "A full-featured mobile application for premium restaurant food delivery and reservation. Built with Flutter.",
+      image: "/mobile-restaurant-thumb.png",
+      tags: ["Flutter", "Dart", "Mobile App", "UI/UX", "Restaurant"],
+      githubUrl: "https://github.com/azimsyafawi04/mobile-Restaurent-Premium-Package",
+      liveUrl: "#"
     }
   ],
   packages: [
