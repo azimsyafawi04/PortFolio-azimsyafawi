@@ -188,7 +188,7 @@ export default function Projects() {
             Projects
           </motion.h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-container">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-container mb-24">
             {PORTFOLIO_DATA.projects.map((project, idx) => (
               <motion.div
                 key={project.id}
@@ -199,6 +199,32 @@ export default function Projects() {
                 className="h-full"
               >
                 <ProjectCard project={project} onOpenModal={(p) => { setSelectedProject(p); setModalImgIndex(0); }} />
+              </motion.div>
+            ))}
+          </div>
+
+          <div id="packages" className="pt-24 scroll-mt-24">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl font-bold tracking-tight text-white mb-12 glow-text-cyan"
+            >
+              Web Packages
+            </motion.h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-container">
+            {PORTFOLIO_DATA.packages.map((pkg, idx) => (
+              <motion.div
+                key={pkg.id}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: idx * 0.1, duration: 0.5 }}
+                className="h-full"
+              >
+                <ProjectCard project={pkg} onOpenModal={(p) => { setSelectedProject(p); setModalImgIndex(0); }} />
               </motion.div>
             ))}
           </div>

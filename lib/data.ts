@@ -46,6 +46,17 @@ export const PORTFOLIO_DATA = {
       liveUrl: "/as-shop-studio/index.html"
     },
     {
+      id: 8,
+      title: "Smart Campus (SSIIMS)",
+      description: "Secure Student Information & Identity Management System. Features RBAC, secure login view, student portal, and admin console.",
+      image: "/smart-campus-thumb.png",
+      tags: ["HTML5", "CSS3", "JavaScript", "RBAC", "Security"],
+      githubUrl: "https://github.com/azimsyafawi04/SSCSS-Smart-Campus",
+      liveUrl: "/smart-campus/index.html"
+    }
+  ],
+  packages: [
+    {
       id: 5,
       title: "Basic Web Package",
       description: "Starter Business Page: 1-page responsive landing page for your business with contact form, basic info, and social media.",
@@ -80,15 +91,6 @@ export const PORTFOLIO_DATA = {
       tags: ["HTML", "CSS", "JavaScript", "Advanced UI"],
       githubUrl: "#",
       liveUrl: "#"
-    },
-    {
-      id: 8,
-      title: "Smart Campus (SSIIMS)",
-      description: "Secure Student Information & Identity Management System. Features RBAC, secure login view, student portal, and admin console.",
-      image: "/smart-campus-thumb.png",
-      tags: ["HTML5", "CSS3", "JavaScript", "RBAC", "Security"],
-      githubUrl: "https://github.com/azimsyafawi04/SSCSS-Smart-Campus",
-      liveUrl: "/smart-campus/index.html"
     }
   ],
   contact: {
