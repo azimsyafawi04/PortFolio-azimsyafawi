@@ -30,7 +30,7 @@ export const PORTFOLIO_DATA = {
       id: 3,
       title: "SOC Simulator",
       description: "A Security Operations Center simulation environment designed for threat detection, log analysis, and incident response training.",
-      image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop",
+      image: "/soc-simulator-thumb.png",
       tags: ["Cybersecurity", "Splunk", "Wazuh"],
       githubUrl: "https://github.com/azimsyafawi04/soc_simulator",
       liveUrl: "/soc-simulator/index.html"
