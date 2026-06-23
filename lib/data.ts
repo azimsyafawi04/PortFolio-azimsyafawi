@@ -24,7 +24,7 @@ export const PORTFOLIO_DATA = {
       image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
       tags: ["POS System", "Software", "Management"],
       githubUrl: "https://github.com/azimsyafawi04/Point-of-Sale-project-",
-      liveUrl: "#"
+      liveUrl: "/pos-demo.html"
     },
     {
       id: 3,

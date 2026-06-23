@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern POS System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        Babel.registerPreset('react-classic', {
+            presets: [
+                [Babel.availablePresets['react'], { "runtime": "classic" }]
+            ]
+        });
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Custom Scrollbar for better UI */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Print Styles */
+        .print-hidden { display: block; }
+        .print-area { display: none; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .print-hidden { display: none !important; }
+            .print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            @page { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="error-boundary" style="color: red; padding: 20px; font-weight: bold; background: #fee; white-space: pre-wrap; font-family: monospace;"></div>
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            document.getElementById('error-boundary').innerText += '\nError: ' + msg + ' at line ' + lineNo;
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            document.getElementById('error-boundary').innerText += '\nPromise Error: ' + (event.reason && event.reason.message || event.reason);
+        });
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            document.getElementById('error-boundary').innerText += '\nConsole Error: ' + args.join(' ');
+            originalConsoleError.apply(console, args);
+        };
+    </script>
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="react-classic,env">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // Seed Data
+        const initialProducts = [
+            { id:1, barcode:"1001", name:"Mineral Water 500ml", price:1.50, stock:80, reorderPoint:20, category:"Beverages" },
+            { id:2, barcode:"1002", name:"White Rice 5kg", price:12.00, stock:35, reorderPoint:10, category:"Dry Goods" },
+            { id:3, barcode:"1003", name:"Cooking Oil 1L", price:8.50, stock:5, reorderPoint:15, category:"Dry Goods" },
+            { id:4, barcode:"1004", name:"Instant Noodles", price:0.80, stock:120, reorderPoint:30, category:"Dry Goods" },
+            { id:5, barcode:"1005", name:"Dishwashing Liquid", price:4.20, stock:22, reorderPoint:10, category:"Household" }
+        ];
+
+        const initialUsers = [
+            { id:1, name:"Ahmad (Cashier)", role:"cashier", pin:"1111" },
+            { id:2, name:"Siti (Inventory)", role:"inventory", pin:"2222" },
+            { id:3, name:"Admin", role:"admin", pin:"3333" },
+            { id:4, name:"Sarah (Supervisor)", role:"supervisor", pin:"4444" }
+        ];
+
+        const initialSettings = { storeName:"MyShop POS", taxRate:0.06, currency:"RM", receiptFooter: "Thank you for shopping with us!" };
+
+        // Custom Hook for LocalStorage
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) { return initialValue; }
+            });
+
+            const setValue = (value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) { console.log(error); }
+            };
+            return [storedValue, setValue];
+        }
+
+        // Shared Components
+        const QRCodeComponent = ({ value, amount, currency }) => {
+            const qrRef = useRef(null);
+            useEffect(() => {
+                if(qrRef.current) {
+                    qrRef.current.innerHTML = "";
+                    new QRCode(qrRef.current, {
+                        text: value, width: 180, height: 180,
+                        colorDark : "#000000", colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                }
+            }, [value]);
+            return (
+                <div className="flex flex-col items-center justify-center inline-block">
+                    <div ref={qrRef} className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm"></div>
+                </div>
+            );
+        };
+
+        const SalesChart = ({ transactions }) => {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+
+            useEffect(() => {
+                if (chartRef.current) chartRef.current.destroy();
+                const hourlySales = Array(24).fill(0);
+                const today = new Date().toDateString();
+                
+                transactions.forEach(t => {
+                    const date = new Date(t.timestamp);
+                    if(date.toDateString() === today) {
+                        hourlySales[date.getHours()] += t.total;
+                    }
+                });
+
+                const ctx = canvasRef.current.getContext('2d');
+                chartRef.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                        datasets: [{
+                            label: "Sales",
+                            data: hourlySales,
+                            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+                return () => { if (chartRef.current) chartRef.current.destroy(); }
+            }, [transactions]);
+
+            return <div style={{ height: '300px' }}><canvas ref={canvasRef}></canvas></div>;
+        };
+
+
+        // --- Interfaces ---
+
+        function LoginScreen({ users, onLogin }) {
+            const [selectedRole, setSelectedRole] = useState(null);
+            const [pin, setPin] = useState('');
+            const [error, setError] = useState('');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const user = users.find(u => u.role === selectedRole && u.pin === pin);
+                if (user) onLogin(user);
+                else { setError('Invalid PIN'); setPin(''); }
+            };
+
+            const roles = ['cashier', 'inventory', 'admin', 'supervisor'];
+            const icons = { cashier: 'cash-register text-emerald-500', inventory: 'boxes text-blue-500', admin: 'user-cog text-slate-600', supervisor: 'chart-pie text-purple-500' };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-100 to-slate-200">
+                    <div className="mb-10 text-center">
+                        <div className="w-20 h-20 bg-indigo-600 text-white rounded-2xl flex items-center justify-center text-4xl shadow-lg mx-auto mb-4">
+                            <i className="fas fa-store"></i>
+                        </div>
+                        <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">Smart POS System</h1>
+                    </div>
+                    
+                    {!selectedRole ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl w-full">
+                            {roles.map(role => (
+                                <div key={role} onClick={() => setSelectedRole(role)} className="bg-white/80 backdrop-blur rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-8 cursor-pointer border border-white/50 flex flex-col items-center justify-center space-y-4 group">
+                                    <i className={`fas fa-${icons[role]} text-5xl group-hover:scale-110 transition-transform`}></i>
+                                    <h2 className="text-xl font-bold capitalize text-slate-700">{role} Interface</h2>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-slate-100 transform transition-all">
+                            <button onClick={() => { setSelectedRole(null); setError(''); setPin(''); }} className="text-slate-400 hover:text-slate-800 mb-6 flex items-center transition-colors font-medium">
+                                <i className="fas fa-arrow-left mr-2"></i> Back to roles
+                            </button>
+                            <div className="text-center mb-8">
+                                <i className={`fas fa-${icons[selectedRole]} text-5xl mb-4`}></i>
+                                <h2 className="text-3xl font-bold text-slate-800 capitalize">{selectedRole} Login</h2>
+                            </div>
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wider text-center">Enter 4-Digit PIN</label>
+                                    <input autoFocus type="password" value={pin} onChange={e => setPin(e.target.value)} maxLength={4} className="w-full px-4 py-4 rounded-xl border-2 border-slate-200 focus:ring-0 focus:border-indigo-500 outline-none text-center text-3xl tracking-[1em] font-mono shadow-inner bg-slate-50 transition-colors" placeholder="••••" />
+                                </div>
+                                {error && <p className="text-rose-500 text-sm text-center font-medium bg-rose-50 py-2 rounded-lg">{error}</p>}
+                                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]">
+                                    Access System
+                                </button>
+                            </form>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function CashierInterface({ products, setProducts, settings, transactions, setTransactions, logAudit, onLogout, currentUser }) {
+            const [cart, setCart] = useState([]);
+            const [barcodeInput, setBarcodeInput] = useState('');
+            const [discount, setDiscount] = useState(0);
+            const [paymentModal, setPaymentModal] = useState(null);
+            const [tendered, setTendered] = useState('');
+            const [receipt, setReceipt] = useState(null);
+            const [isProcessing, setIsProcessing] = useState(false);
+            
+            const inputRef = useRef(null);
+
+            useEffect(() => { if (!paymentModal && !receipt && inputRef.current) inputRef.current.focus(); }, [paymentModal, receipt, cart]);
+
+            const handleScan = (e) => {
+                if (e.key === 'Enter' && barcodeInput.trim() !== '') {
+                    const product = products.find(p => p.barcode === barcodeInput.trim());
+                    if (product) addToCart(product);
+                    else alert('Product not found!');
+                    setBarcodeInput('');
+                }
+            };
+
+            const addToCart = (product) => {
+                if (product.stock <= 0) return alert('Out of stock!');
+                setCart(prev => {
+                    const existing = prev.find(item => item.id === product.id);
+                    if (existing) {
+                        if (existing.qty >= product.stock) { alert('Exceeds available stock'); return prev; }
+                        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+                    }
+                    return [...prev, { ...product, qty: 1 }];
+                });
+            };
+
+            const updateQty = (id, delta) => {
+                setCart(prev => prev.map(item => {
+                    if (item.id === id) {
+                        const newQty = item.qty + delta;
+                        if (newQty > item.stock) { alert('Not enough stock'); return item; }
+                        return { ...item, qty: Math.max(1, newQty) };
+                    }
+                    return item;
+                }));
+            };
+
+            const removeItem = (id) => setCart(prev => prev.filter(item => item.id !== id));
+
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const tax = subtotal * settings.taxRate;
+            const total = Math.max(0, subtotal + tax - discount);
+
+            const completeTransaction = (method, amountTendered) => {
+                const tx = {
+                    id: 'TXN' + Math.floor(100000 + Math.random() * 900000),
+                    timestamp: new Date().toISOString(),
+                    cashier: currentUser.name,
+                    items: cart, subtotal, tax, discount, total, method, 
+                    tendered: amountTendered || total
+                };
+                setTransactions(prev => [tx, ...prev]);
+                logAudit('Sale', `Txn ${tx.id} via ${method} for ${settings.currency}${total.toFixed(2)}`);
+                
+                const updatedProducts = [...products];
+                cart.forEach(item => {
+                    const idx = updatedProducts.findIndex(p => p.id === item.id);
+                    if (idx > -1) updatedProducts[idx].stock -= item.qty;
+                });
+                setProducts(updatedProducts);
+
+                setReceipt(tx); setCart([]); setDiscount(0); setPaymentModal(null); setTendered('');
+            };
+
+            const handleCashSubmit = (e) => {
+                e.preventDefault();
+                const t = parseFloat(tendered);
+                if (isNaN(t) || t < total) return alert('Insufficient amount tendered');
+                completeTransaction('cash', t);
+            };
+
+            const processAsyncPayment = (method) => {
+                setIsProcessing(true);
+                setTimeout(() => { setIsProcessing(false); completeTransaction(method, total); }, 2000);
+            };
+
+            return (
+                <div className="flex flex-col h-screen overflow-hidden">
+                    {/* Topbar */}
+                    <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center z-10 print-hidden border-b border-slate-200">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center"><i className="fas fa-store text-indigo-600 text-xl"></i></div>
+                            <h1 className="text-xl font-bold text-slate-800">{settings.storeName} <span className="text-slate-400 font-normal">|</span> POS</h1>
+                        </div>
+                        <div className="flex items-center space-x-6">
+                            <div className="flex items-center bg-slate-100 px-4 py-2 rounded-full">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
+                                <span className="text-slate-700 font-medium text-sm">{currentUser.name}</span>
+                            </div>
+                            <button onClick={onLogout} className="text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-lg font-medium transition-colors border border-transparent hover:border-rose-200"><i className="fas fa-sign-out-alt mr-2"></i> Exit Session</button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-1 overflow-hidden print-hidden bg-slate-100/50">
+                        {/* Products Panel */}
+                        <div className="w-2/3 p-6 flex flex-col h-full">
+                            <div className="mb-6 relative group">
+                                <i className="fas fa-barcode absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-indigo-500 transition-colors"></i>
+                                <input ref={inputRef} type="text" value={barcodeInput} onChange={e => setBarcodeInput(e.target.value)} onKeyPress={handleScan} className="w-full pl-14 pr-6 py-4 rounded-2xl border-0 shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none text-xl bg-white transition-shadow focus:shadow-md" placeholder="Scan barcode or type and press Enter..." />
+                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-slate-400 font-medium px-2 py-1 bg-slate-100 rounded">Auto-focus</div>
+                            </div>
+                            
+                            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Quick Add Catalog</h3>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-4 content-start">
+                                {products.map(p => (
+                                    <div key={p.id} onClick={() => addToCart(p)} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-slate-50 rounded-bl-full -mr-8 -mt-8 transition-colors group-hover:bg-indigo-50"></div>
+                                        <div className="relative z-10">
+                                            <div className="text-xs font-semibold text-indigo-500 mb-1">{p.category}</div>
+                                            <h3 className="font-bold text-slate-800 leading-tight mb-4">{p.name}</h3>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xl font-extrabold text-slate-800">{settings.currency}{p.price.toFixed(2)}</span>
+                                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${p.stock <= p.reorderPoint ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>{p.stock} Left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Cart Panel */}
+                        <div className="w-1/3 bg-white border-l border-slate-200 flex flex-col shadow-2xl relative z-10">
+                            <div className="p-5 border-b border-slate-100 bg-white flex justify-between items-center">
+                                <h2 className="text-xl font-bold text-slate-800">Current Order</h2>
+                                <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded-lg">{cart.length} Items</span>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50">
+                                {cart.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
+                                        <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center"><i className="fas fa-shopping-basket text-4xl text-slate-300"></i></div>
+                                        <p className="font-medium text-slate-500">Scan items to begin</p>
+                                    </div>
+                                ) : cart.map(item => (
+                                    <div key={item.id} className="flex flex-col p-4 bg-white rounded-xl shadow-sm border border-slate-100 relative group">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h4 className="font-bold text-slate-800 flex-1 pr-4 leading-tight">{item.name}</h4>
+                                            <button onClick={() => removeItem(item.id)} className="text-slate-300 hover:text-rose-500 transition-colors"><i className="fas fa-times-circle text-lg"></i></button>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                                                <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-md bg-white shadow-sm text-slate-600 hover:text-indigo-600"><i className="fas fa-minus text-xs"></i></button>
+                                                <span className="w-10 text-center font-bold text-slate-800">{item.qty}</span>
+                                                <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-md bg-white shadow-sm text-slate-600 hover:text-indigo-600"><i className="fas fa-plus text-xs"></i></button>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-xs text-slate-400 mb-0.5">{settings.currency}{item.price.toFixed(2)} ea</div>
+                                                <div className="font-extrabold text-slate-800 text-lg">{settings.currency}{(item.price * item.qty).toFixed(2)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="bg-white border-t border-slate-200 p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex justify-between text-slate-500 font-medium"><span>Subtotal</span><span>{settings.currency}{subtotal.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-slate-500 font-medium"><span>Tax ({(settings.taxRate * 100).toFixed(0)}%)</span><span>{settings.currency}{tax.toFixed(2)}</span></div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 font-medium text-emerald-600"><i className="fas fa-tag mr-2"></i>Discount</span>
+                                        <div className="relative w-24">
+                                            <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">{settings.currency}</span>
+                                            <input type="number" min="0" value={discount || ''} onChange={e => setDiscount(parseFloat(e.target.value) || 0)} className="w-full pl-8 pr-2 py-1.5 border border-slate-300 rounded-lg text-right outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium bg-emerald-50/30" placeholder="0.00" />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between text-2xl font-black text-slate-800 pt-4 border-t border-dashed border-slate-200 mt-2"><span>Total</span><span className="text-indigo-600">{settings.currency}{total.toFixed(2)}</span></div>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-3">
+                                    <button onClick={() => setPaymentModal('cash')} disabled={cart.length === 0} className="bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all shadow-md">
+                                        <i className="fas fa-money-bill-wave text-xl mb-2 text-emerald-400"></i> Cash
+                                    </button>
+                                    <button onClick={() => setPaymentModal('card')} disabled={cart.length === 0} className="bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all shadow-md">
+                                        <i className="fas fa-credit-card text-xl mb-2 text-blue-400"></i> Card
+                                    </button>
+                                    <button onClick={() => setPaymentModal('qr')} disabled={cart.length === 0} className="bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all shadow-md">
+                                        <i className="fas fa-qrcode text-xl mb-2 text-purple-400"></i> QR Pay
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Modals */}
+                    {paymentModal === 'cash' && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl transform transition-all">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-slate-800">Cash Payment</h2>
+                                    <button type="button" onClick={() => { setPaymentModal(null); setTendered(''); }} className="text-slate-400 hover:bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-times text-xl"></i></button>
+                                </div>
+                                <div className="bg-slate-50 rounded-2xl p-6 text-center mb-6 border border-slate-100">
+                                    <p className="text-slate-500 font-medium mb-1 uppercase tracking-wider text-sm">Amount Due</p>
+                                    <p className="text-5xl font-black text-indigo-600">{settings.currency}{total.toFixed(2)}</p>
+                                </div>
+                                <form onSubmit={handleCashSubmit}>
+                                    <div className="mb-6">
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Amount Tendered</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none"><span className="text-slate-400 font-bold text-2xl">{settings.currency}</span></div>
+                                            <input autoFocus type="number" step="0.01" value={tendered} onChange={e => setTendered(e.target.value)} className="w-full pl-16 pr-5 py-5 rounded-2xl border-2 border-slate-200 focus:ring-0 focus:border-emerald-500 outline-none text-4xl font-bold shadow-inner bg-slate-50 transition-colors" placeholder="0.00" />
+                                        </div>
+                                    </div>
+                                    {tendered && parseFloat(tendered) >= total && (
+                                        <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-100 text-center rounded-2xl">
+                                            <p className="text-emerald-600 font-bold uppercase text-xs tracking-wider mb-1">Change Due</p>
+                                            <p className="text-3xl font-black text-emerald-500">{settings.currency}{(parseFloat(tendered) - total).toFixed(2)}</p>
+                                        </div>
+                                    )}
+                                    <button type="submit" className="w-full bg-emerald-500 text-white rounded-xl py-4 font-bold text-lg hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">Complete Sale</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {paymentModal === 'card' && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl text-center">
+                                <h2 className="text-2xl font-bold text-slate-800 mb-6">Card Terminal</h2>
+                                <div className="bg-slate-50 rounded-2xl p-6 mb-8 border border-slate-100">
+                                    <p className="text-slate-500 font-medium mb-1 uppercase tracking-wider text-sm">Amount Due</p>
+                                    <p className="text-5xl font-black text-indigo-600">{settings.currency}{total.toFixed(2)}</p>
+                                </div>
+                                {!isProcessing ? (
+                                    <div className="space-y-6">
+                                        <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-500"><i className="fas fa-credit-card text-5xl"></i></div>
+                                        <p className="text-slate-600 font-medium">Please swipe, insert, or tap card on the terminal.</p>
+                                        <div className="flex space-x-4 mt-8">
+                                            <button onClick={() => setPaymentModal(null)} className="flex-1 px-4 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors">Cancel</button>
+                                            <button onClick={() => processAsyncPayment('card')} className="flex-1 px-4 py-4 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-200">Simulate Success</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="py-12">
+                                        <div className="animate-spin rounded-full h-20 w-20 border-4 border-slate-100 border-t-blue-500 mx-auto mb-6"></div>
+                                        <p className="text-xl font-bold text-blue-600 animate-pulse">Processing Payment...</p>
+                                        <p className="text-slate-400 text-sm mt-2">Do not remove card</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {paymentModal === 'qr' && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl text-center">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h2 className="text-2xl font-bold text-slate-800">QR Code Pay</h2>
+                                    <button onClick={() => setPaymentModal(null)} className="text-slate-400 hover:bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-times text-xl"></i></button>
+                                </div>
+                                <p className="text-slate-500 font-medium mb-6">Scan with any supported E-Wallet app</p>
+                                
+                                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 inline-block">
+                                    <QRCodeComponent value={`PAY:${settings.storeName}:${total}`} amount={total} currency={settings.currency} />
+                                    <div className="mt-4 pt-4 border-t border-slate-200">
+                                        <p className="text-sm font-medium text-slate-500 uppercase">Amount Due</p>
+                                        <p className="text-3xl font-black text-slate-800">{settings.currency}{total.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                
+                                <button onClick={() => completeTransaction('qr', total)} className="w-full bg-purple-500 text-white rounded-xl py-4 font-bold text-lg hover:bg-purple-600 transition-colors shadow-lg shadow-purple-200">Confirm Payment Received</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Receipt Modal & Print Area */}
+                    {receipt && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-50 p-4 print-hidden">
+                            <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl flex flex-col items-center">
+                                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50">
+                                    <i className="fas fa-check text-4xl text-emerald-500"></i>
+                                </div>
+                                <h2 className="text-3xl font-black text-slate-800 mb-2">Payment Successful</h2>
+                                <p className="text-slate-500 font-medium mb-6 font-mono bg-slate-100 px-3 py-1 rounded-lg text-sm">ID: {receipt.id}</p>
+                                
+                                {receipt.method === 'cash' && receipt.tendered > receipt.total && (
+                                    <div className="w-full bg-emerald-50 border border-emerald-100 p-4 rounded-xl mb-6 text-center">
+                                        <p className="text-emerald-600 font-bold uppercase text-xs tracking-wider mb-1">Return Change</p>
+                                        <p className="text-3xl font-black text-emerald-500">{settings.currency}{(receipt.tendered - receipt.total).toFixed(2)}</p>
+                                    </div>
+                                )}
+                                
+                                <div className="w-full space-y-3 mt-4">
+                                    <button onClick={() => { window.print(); setReceipt(null); }} className="w-full bg-indigo-600 text-white rounded-xl py-4 font-bold text-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center"><i className="fas fa-print mr-2 text-xl"></i> Print Receipt</button>
+                                    <button onClick={() => setReceipt(null)} className="w-full bg-slate-100 text-slate-700 rounded-xl py-4 font-bold text-lg hover:bg-slate-200 transition-colors">Start New Sale</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Receipt Template (Print Only) */}
+                    {receipt && (
+                        <div className="print-area font-mono text-black w-80 mx-auto bg-white p-4" id="receipt-area">
+                            <div className="text-center mb-6">
+                                <h1 className="text-2xl font-bold mb-1">{settings.storeName}</h1>
+                                <p className="text-xs text-gray-500">Receipt: {receipt.id}</p>
+                                <p className="text-xs text-gray-500">{new Date(receipt.timestamp).toLocaleString()}</p>
+                                <p className="text-xs text-gray-500 border-b border-dashed border-gray-400 pb-4 mt-2">Cashier: {receipt.cashier}</p>
+                            </div>
+                            <table className="w-full text-sm mb-4">
+                                <tbody>
+                                    {receipt.items.map(item => (
+                                        <React.Fragment key={item.id}>
+                                            <tr><td colSpan="3" className="pt-2 font-bold">{item.name}</td></tr>
+                                            <tr>
+                                                <td className="text-gray-600">{item.qty} x {item.price.toFixed(2)}</td>
+                                                <td className="text-right">{(item.qty * item.price).toFixed(2)}</td>
+                                            </tr>
+                                        </React.Fragment>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div className="border-t border-dashed border-gray-400 pt-4 text-sm space-y-1 mb-4">
+                                <div className="flex justify-between"><span>Subtotal</span><span>{receipt.subtotal.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Tax ({(settings.taxRate*100).toFixed(0)}%)</span><span>{receipt.tax.toFixed(2)}</span></div>
+                                {receipt.discount > 0 && <div className="flex justify-between"><span>Discount</span><span>-{receipt.discount.toFixed(2)}</span></div>}
+                            </div>
+                            <div className="border-t border-black pt-2 pb-2 mb-4 flex justify-between font-bold text-lg">
+                                <span>TOTAL</span><span>{settings.currency}{receipt.total.toFixed(2)}</span>
+                            </div>
+                            <div className="text-sm space-y-1 border-b border-dashed border-gray-400 pb-4 mb-4">
+                                <div className="flex justify-between uppercase"><span>{receipt.method} Paid</span><span>{receipt.tendered.toFixed(2)}</span></div>
+                                {receipt.method === 'cash' && <div className="flex justify-between font-bold"><span>CHANGE</span><span>{(receipt.tendered - receipt.total).toFixed(2)}</span></div>}
+                            </div>
+                            <div className="text-center text-sm font-bold mt-8">
+                                <p>{settings.receiptFooter}</p>
+                                <p className="mt-2 text-xs font-normal">***</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function InventoryInterface({ products, setProducts, stockLog, setStockLog, logAudit, onLogout, currentUser }) {
+            const [barcode, setBarcode] = useState('');
+            const [qty, setQty] = useState('');
+            const [action, setAction] = useState('in');
+            const [reason, setReason] = useState('');
+            const [tab, setTab] = useState('manage');
+
+            const handleUpdate = (e) => {
+                e.preventDefault();
+                const productIndex = products.findIndex(p => p.barcode === barcode);
+                if (productIndex === -1) return alert('Product not found. Scan valid barcode.');
+                
+                const amount = parseInt(qty);
+                if (isNaN(amount) || amount <= 0) return alert('Invalid quantity');
+
+                const p = products[productIndex];
+                const newStock = action === 'in' ? p.stock + amount : p.stock - amount;
+                
+                if (newStock < 0) return alert('Cannot reduce stock below 0');
+
+                const updatedProducts = [...products];
+                updatedProducts[productIndex].stock = newStock;
+                setProducts(updatedProducts);
+
+                const logEntry = {
+                    id: Date.now(), timestamp: new Date().toISOString(),
+                    user: currentUser.name, barcode, productName: p.name,
+                    action, amount, reason, newStock
+                };
+                setStockLog(prev => [logEntry, ...prev]);
+                logAudit(`Stock ${action}`, `${amount} of ${p.name}. Notes: ${reason}`);
+
+                setBarcode(''); setQty(''); setReason('');
+                alert('Inventory successfully updated!');
+            };
+
+            return (
+                <div className="flex flex-col h-screen overflow-hidden">
+                    <div className="bg-white shadow-sm px-8 py-5 flex justify-between items-center z-10 border-b border-slate-200">
+                        <div className="flex items-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4"><i className="fas fa-boxes text-blue-600 text-xl"></i></div>
+                            <h1 className="text-xl font-bold text-slate-800">Inventory Portal</h1>
+                        </div>
+                        <div className="flex items-center space-x-6">
+                            <div className="bg-slate-100 p-1 rounded-xl flex space-x-1 border border-slate-200 shadow-inner">
+                                <button onClick={() => setTab('manage')} className={`px-5 py-2 rounded-lg font-bold text-sm transition-all ${tab === 'manage' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>Manage Stock</button>
+                                <button onClick={() => setTab('log')} className={`px-5 py-2 rounded-lg font-bold text-sm transition-all ${tab === 'log' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>Movement Log</button>
+                            </div>
+                            <button onClick={onLogout} className="text-rose-600 font-bold hover:bg-rose-50 px-4 py-2 rounded-lg transition-colors"><i className="fas fa-sign-out-alt mr-2"></i> Log Out</button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+                        {tab === 'manage' && (
+                            <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
+                                {/* Form Side */}
+                                <div className="w-full lg:w-1/3 space-y-6">
+                                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                                        <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center"><i className="fas fa-exchange-alt mr-3 text-blue-500"></i> Stock Adjustment</h2>
+                                        <form onSubmit={handleUpdate} className="space-y-5">
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Item Barcode</label>
+                                                <div className="relative">
+                                                    <i className="fas fa-barcode absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                                    <input required autoFocus type="text" value={barcode} onChange={e => setBarcode(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none font-medium bg-slate-50 focus:bg-white transition-colors" placeholder="Scan or enter..." />
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-100 p-1.5 rounded-xl flex space-x-1">
+                                                <button type="button" onClick={() => setAction('in')} className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center transition-all ${action === 'in' ? 'bg-emerald-500 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}><i className="fas fa-arrow-down mr-2"></i> Stock In</button>
+                                                <button type="button" onClick={() => setAction('out')} className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center transition-all ${action === 'out' ? 'bg-rose-500 text-white shadow' : 'text-slate-600 hover:bg-slate-200'}`}><i className="fas fa-arrow-up mr-2"></i> Stock Out</button>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Quantity</label>
+                                                <input required type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-lg bg-slate-50 focus:bg-white transition-colors" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Notes / Reason</label>
+                                                <input type="text" value={reason} onChange={e => setReason(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-medium bg-slate-50 focus:bg-white transition-colors" placeholder={action==='in'?'Supplier Invoice #':'Damage, Expiry, Transfer'} />
+                                            </div>
+                                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-4">Confirm Adjustment</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                
+                                {/* Table Side */}
+                                <div className="w-full lg:w-2/3 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                                        <h2 className="text-xl font-bold text-slate-800">Live Inventory Status</h2>
+                                        <div className="flex items-center text-sm font-medium text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
+                                            <i className="fas fa-exclamation-circle mr-2"></i> Check items highlighted in red
+                                        </div>
+                                    </div>
+                                    <div className="overflow-auto flex-1 p-0">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50/80 backdrop-blur sticky top-0 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold z-10">
+                                                <tr>
+                                                    <th className="p-5">Product Info</th>
+                                                    <th className="p-5">Category</th>
+                                                    <th className="p-5 text-right">Stock Level</th>
+                                                    <th className="p-5 text-right">Reorder Pt</th>
+                                                    <th className="p-5 text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {products.map(p => {
+                                                    const isLow = p.stock <= p.reorderPoint;
+                                                    return (
+                                                        <tr key={p.id} className={`hover:bg-slate-50 transition-colors ${isLow ? 'bg-rose-50/30' : ''}`}>
+                                                            <td className="p-5">
+                                                                <div className="font-bold text-slate-800 text-base">{p.name}</div>
+                                                                <div className="text-xs font-mono text-slate-400 mt-1">{p.barcode}</div>
+                                                            </td>
+                                                            <td className="p-5 font-medium text-slate-500">{p.category}</td>
+                                                            <td className="p-5 text-right">
+                                                                <span className={`text-xl font-black ${isLow ? 'text-rose-600' : 'text-slate-800'}`}>{p.stock}</span>
+                                                            </td>
+                                                            <td className="p-5 text-right font-medium text-slate-400">{p.reorderPoint}</td>
+                                                            <td className="p-5 text-center">
+                                                                {isLow ? <span className="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-bold">Low Stock</span> : <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">Healthy</span>}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {tab === 'log' && (
+                            <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden h-[calc(100vh-140px)] flex flex-col">
+                                <div className="p-6 border-b border-slate-100 bg-white">
+                                    <h2 className="text-xl font-bold text-slate-800">Inventory Movement History</h2>
+                                </div>
+                                <div className="overflow-auto flex-1">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-slate-50/80 backdrop-blur sticky top-0 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold z-10">
+                                            <tr>
+                                                <th className="p-5">Date/Time</th>
+                                                <th className="p-5">Type</th>
+                                                <th className="p-5">Item</th>
+                                                <th className="p-5 font-right text-right">Qty</th>
+                                                <th className="p-5">Staff</th>
+                                                <th className="p-5">Notes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {stockLog.length === 0 ? <tr><td colSpan="6" className="p-12 text-center text-slate-400 font-medium">No movements recorded yet.</td></tr> : null}
+                                            {stockLog.map(log => (
+                                                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="p-5 text-sm font-medium text-slate-500">{new Date(log.timestamp).toLocaleString()}</td>
+                                                    <td className="p-5">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex inline-flex items-center ${log.action === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                            <i className={`fas fa-arrow-${log.action === 'in' ? 'down' : 'up'} mr-1`}></i> {log.action.toUpperCase()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-5 font-bold text-slate-800">{log.productName} <span className="text-xs font-normal text-slate-400 block mt-1">{log.barcode}</span></td>
+                                                    <td className={`p-5 font-black text-right text-lg ${log.action === 'in' ? 'text-emerald-600' : 'text-rose-600'}`}>{log.action === 'in' ? '+' : '-'}{log.amount}</td>
+                                                    <td className="p-5 font-medium text-slate-700">{log.user}</td>
+                                                    <td className="p-5 text-sm text-slate-500 italic">{log.reason || '-'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function SupervisorInterface({ transactions, products, users, onLogout }) {
+            const today = new Date().toDateString();
+            const todaysTransactions = transactions.filter(t => new Date(t.timestamp).toDateString() === today);
+            const totalSales = todaysTransactions.reduce((sum, t) => sum + t.total, 0);
+            const txCount = todaysTransactions.length;
+            
+            const lowStockItems = products.filter(p => p.stock <= p.reorderPoint);
+            const cashiers = users.filter(u => u.role === 'cashier');
+
+            return (
+                <div className="flex flex-col h-screen overflow-hidden bg-slate-100">
+                    <div className="bg-white shadow-sm px-8 py-5 flex justify-between items-center z-10 border-b border-slate-200">
+                        <div className="flex items-center">
+                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4"><i className="fas fa-chart-pie text-purple-600 text-xl"></i></div>
+                            <h1 className="text-xl font-bold text-slate-800">Supervisor Dashboard</h1>
+                        </div>
+                        <button onClick={onLogout} className="text-rose-600 font-bold hover:bg-rose-50 px-4 py-2 rounded-lg transition-colors"><i className="fas fa-sign-out-alt mr-2"></i> Log Out</button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                        {/* Metrics Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 flex items-center relative overflow-hidden group hover:shadow-md transition-shadow">
+                                <div className="absolute -right-6 -top-6 w-32 h-32 bg-indigo-50 rounded-full group-hover:scale-110 transition-transform"></div>
+                                <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mr-6 relative z-10 shadow-inner"><i className="fas fa-dollar-sign text-3xl text-indigo-600"></i></div>
+                                <div className="relative z-10">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Today's Revenue</p>
+                                    <h2 className="text-4xl font-black text-slate-800">{totalSales.toFixed(2)}</h2>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 flex items-center relative overflow-hidden group hover:shadow-md transition-shadow">
+                                <div className="absolute -right-6 -top-6 w-32 h-32 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform"></div>
+                                <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mr-6 relative z-10 shadow-inner"><i className="fas fa-receipt text-3xl text-emerald-600"></i></div>
+                                <div className="relative z-10">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Transactions</p>
+                                    <h2 className="text-4xl font-black text-slate-800">{txCount}</h2>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 flex items-center relative overflow-hidden group hover:shadow-md transition-shadow">
+                                <div className="absolute -right-6 -top-6 w-32 h-32 bg-rose-50 rounded-full group-hover:scale-110 transition-transform"></div>
+                                <div className="w-16 h-16 rounded-2xl bg-rose-100 flex items-center justify-center mr-6 relative z-10 shadow-inner"><i className="fas fa-exclamation-triangle text-3xl text-rose-600"></i></div>
+                                <div className="relative z-10">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Action Needed</p>
+                                    <h2 className="text-4xl font-black text-slate-800">{lowStockItems.length} <span className="text-lg font-bold text-slate-500">Low Stock</span></h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Chart */}
+                            <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center"><i className="fas fa-chart-line text-indigo-500 mr-3"></i> Hourly Sales Trend</h2>
+                                <SalesChart transactions={transactions} />
+                            </div>
+                            
+                            {/* Right Column */}
+                            <div className="space-y-8">
+                                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                                    <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center justify-between">
+                                        <div className="flex items-center"><i className="fas fa-bell text-rose-500 mr-3"></i> Alerts</div>
+                                        {lowStockItems.length > 0 && <span className="bg-rose-100 text-rose-700 py-1 px-3 rounded-full text-xs font-bold">{lowStockItems.length}</span>}
+                                    </h2>
+                                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                                        {lowStockItems.length === 0 ? (
+                                            <div className="text-center p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                                <i className="fas fa-check-circle text-emerald-400 text-3xl mb-2"></i>
+                                                <p className="text-slate-500 font-medium text-sm">All inventory healthy.</p>
+                                            </div>
+                                        ) : lowStockItems.map(p => (
+                                            <div key={p.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-rose-100 shadow-sm relative overflow-hidden">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500"></div>
+                                                <div className="pl-2">
+                                                    <p className="font-bold text-slate-800">{p.name}</p>
+                                                    <p className="text-xs font-medium text-slate-400 mt-1">Reorder Level: {p.reorderPoint}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-2xl font-black text-rose-600">{p.stock}</div>
+                                                    <div className="text-[10px] uppercase font-bold text-rose-400">Left</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                                    <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center"><i className="fas fa-users text-blue-500 mr-3"></i> Staff Performance Today</h2>
+                                    <div className="space-y-4">
+                                        {cashiers.map(c => {
+                                            const cTxs = todaysTransactions.filter(t => t.cashier === c.name);
+                                            const sum = cTxs.reduce((s, t) => s + t.total, 0);
+                                            return (
+                                                <div key={c.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+                                                    <div className="flex items-center space-x-4">
+                                                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shadow-inner text-indigo-600 font-bold">{c.name.charAt(0)}</div>
+                                                        <span className="font-bold text-slate-700">{c.name}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-black text-slate-800 text-lg">{sum.toFixed(2)}</p>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase">{cTxs.length} Sales</p>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                        {cashiers.length === 0 && <p className="text-slate-500 text-center py-4 text-sm font-medium">No cashiers registered.</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AdminInterface({ users, setUsers, products, setProducts, settings, setSettings, transactions, auditLog, onLogout }) {
+            const [tab, setTab] = useState('settings');
+
+            const handleSettingChange = (e) => {
+                const { name, value } = e.target;
+                setSettings(prev => ({...prev, [name]: name === 'taxRate' ? parseFloat(value) : value}));
+            };
+
+            const exportCSV = () => {
+                if(transactions.length === 0) return alert('No transactions to export');
+                const header = "ID,Date,Cashier,Subtotal,Tax,Discount,Total,Method,Tendered\n";
+                const rows = transactions.map(t => `${t.id},${t.timestamp},"${t.cashier}",${t.subtotal},${t.tax},${t.discount},${t.total},${t.method},${t.tendered}`).join("\n");
+                const blob = new Blob([header + rows], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('href', url);
+                a.setAttribute('download', `sales_export_${new Date().getTime()}.csv`);
+                a.click();
+            };
+
+            const navItems = [
+                { id: 'settings', icon: 'sliders-h', label: 'System Setup' },
+                { id: 'users', icon: 'users', label: 'User Directory' },
+                { id: 'products', icon: 'box', label: 'Product DB' },
+                { id: 'audit', icon: 'clipboard-list', label: 'Security Logs' }
+            ];
+
+            return (
+                <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
+                    <div className="bg-slate-900 shadow-md px-8 py-4 flex justify-between items-center z-20 text-white">
+                        <div className="flex items-center">
+                            <i className="fas fa-server text-indigo-400 text-xl mr-4"></i>
+                            <h1 className="text-xl font-bold tracking-wide">Admin Console</h1>
+                        </div>
+                        <div className="flex items-center space-x-6">
+                            <button onClick={exportCSV} className="text-emerald-400 hover:text-emerald-300 hover:bg-white/10 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-emerald-400/30"><i className="fas fa-file-csv mr-2"></i> Export TXN CSV</button>
+                            <button onClick={onLogout} className="text-rose-400 font-bold hover:bg-white/10 px-4 py-2 rounded-lg transition-colors text-sm"><i className="fas fa-power-off mr-2"></i> Shutdown Session</button>
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-1 overflow-hidden">
+                        {/* Sidebar */}
+                        <div className="w-72 bg-white border-r border-slate-200 p-6 space-y-2 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-4">Management</p>
+                            {navItems.map(t => (
+                                <button key={t.id} onClick={() => setTab(t.id)} className={`w-full text-left px-5 py-4 rounded-2xl font-bold transition-all flex items-center group ${tab === t.id ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-colors ${tab === t.id ? 'bg-white/20' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                                        <i className={`fas fa-${t.icon}`}></i>
+                                    </div>
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        {/* Content Area */}
+                        <div className="flex-1 p-10 overflow-y-auto">
+                            {tab === 'settings' && (
+                                <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <h2 className="text-3xl font-black text-slate-800 mb-8">System Configuration</h2>
+                                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 space-y-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Store Name</label>
+                                                <input name="storeName" value={settings.storeName} onChange={handleSettingChange} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none font-medium bg-slate-50 focus:bg-white transition-colors"/>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Currency Symbol</label>
+                                                <input name="currency" value={settings.currency} onChange={handleSettingChange} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none font-bold bg-slate-50 focus:bg-white transition-colors"/>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Tax Rate (Decimal e.g., 0.06 for 6%)</label>
+                                                <input type="number" step="0.01" name="taxRate" value={settings.taxRate} onChange={handleSettingChange} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none font-medium bg-slate-50 focus:bg-white transition-colors"/>
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-bold text-slate-700 mb-2">Receipt Footer Text</label>
+                                                <input name="receiptFooter" value={settings.receiptFooter || ''} onChange={handleSettingChange} className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none font-medium bg-slate-50 focus:bg-white transition-colors"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {tab === 'users' && (
+                                <div className="max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex justify-between items-end mb-8">
+                                        <h2 className="text-3xl font-black text-slate-800">User Directory</h2>
+                                        <button className="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"><i className="fas fa-plus mr-2"></i> Add User</button>
+                                    </div>
+                                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                                                <tr><th className="p-5">Name / ID</th><th className="p-5">Role Permission</th><th className="p-5 text-center">Actions</th></tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {users.map(u => (
+                                                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="p-5">
+                                                            <div className="font-bold text-slate-800 text-base">{u.name}</div>
+                                                            <div className="text-xs text-slate-400 font-mono mt-1">ID: {u.id} | PIN: ****</div>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-slate-200">{u.role}</span>
+                                                        </td>
+                                                        <td className="p-5 text-center space-x-2">
+                                                            <button className="text-slate-400 hover:text-indigo-600 transition-colors p-2"><i className="fas fa-edit"></i></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {tab === 'products' && (
+                                <div className="max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex justify-between items-end mb-8">
+                                        <h2 className="text-3xl font-black text-slate-800">Product Database</h2>
+                                        <button className="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"><i className="fas fa-plus mr-2"></i> New Product</button>
+                                    </div>
+                                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                                                <tr><th className="p-5">Details</th><th className="p-5 text-right">Price</th><th className="p-5 text-center">Settings</th><th className="p-5 text-center">Actions</th></tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {products.map(p => (
+                                                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="p-5">
+                                                            <div className="font-bold text-slate-800">{p.name}</div>
+                                                            <div className="text-xs text-slate-400 flex items-center mt-1 space-x-2">
+                                                                <span className="font-mono bg-slate-100 px-1.5 rounded">{p.barcode}</span>
+                                                                <span>• {p.category}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-5 text-right font-black text-slate-800">{settings.currency}{p.price.toFixed(2)}</td>
+                                                        <td className="p-5 text-center text-sm font-medium text-slate-500">Reorder at: {p.reorderPoint}</td>
+                                                        <td className="p-5 text-center space-x-2">
+                                                            <button className="text-slate-400 hover:text-indigo-600 transition-colors p-2"><i className="fas fa-edit"></i></button>
+                                                            <button className="text-slate-400 hover:text-rose-600 transition-colors p-2"><i className="fas fa-trash"></i></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {tab === 'audit' && (
+                                <div className="max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <h2 className="text-3xl font-black text-slate-800 mb-8">Security & Activity Logs</h2>
+                                    <div className="bg-slate-900 rounded-3xl shadow-xl overflow-hidden font-mono text-sm">
+                                        <div className="p-4 bg-slate-800 border-b border-slate-700 flex space-x-2">
+                                            <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                        </div>
+                                        <div className="p-6 h-[60vh] overflow-y-auto space-y-3">
+                                            {auditLog.map((log, i) => (
+                                                <div key={i} className="text-slate-300 flex">
+                                                    <span className="text-slate-500 mr-4 shrink-0">[{new Date(log.timestamp).toLocaleString()}]</span>
+                                                    <span>
+                                                        <span className="text-indigo-400 font-bold">{log.user}</span> executed <span className="text-emerald-400">{log.action}</span>: <span className="text-slate-100">{log.details}</span>
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {auditLog.length === 0 && <div className="text-slate-500 p-4">SYSTEM READY. NO LOGS GENERATED YET.</div>}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Container
+        function App() {
+            const [products, setProducts] = useLocalStorage('pos_products', initialProducts);
+            const [users, setUsers] = useLocalStorage('pos_users', initialUsers);
+            const [settings, setSettings] = useLocalStorage('pos_settings', initialSettings);
+            const [transactions, setTransactions] = useLocalStorage('pos_transactions', []);
+            const [stockLog, setStockLog] = useLocalStorage('pos_stockLog', []);
+            const [auditLog, setAuditLog] = useLocalStorage('pos_auditLog', []);
+            
+            const [currentUser, setCurrentUser] = useState(null);
+
+            const logAudit = (action, details) => {
+                setAuditLog(prev => [{ id: Date.now(), timestamp: new Date().toISOString(), user: currentUser?.name || 'System', action, details }, ...prev]);
+            };
+
+            if (!currentUser) {
+                return <LoginScreen users={users} onLogin={user => { setCurrentUser(user); logAudit('Login', `Session started as ${user.role}`); }} />;
+            }
+
+            const commonProps = { products, setProducts, users, setUsers, settings, setSettings, transactions, setTransactions, stockLog, setStockLog, auditLog, logAudit, currentUser, onLogout: () => { logAudit('Logout', 'Session ended'); setCurrentUser(null); } };
+
+            switch(currentUser.role) {
+                case 'cashier': return <CashierInterface {...commonProps} />;
+                case 'inventory': return <InventoryInterface {...commonProps} />;
+                case 'supervisor': return <SupervisorInterface {...commonProps} />;
+                case 'admin': return <AdminInterface {...commonProps} />;
+                default: return <div className="p-8 text-center text-red-500 font-bold">System Error: Invalid Role Assignment</div>;
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
